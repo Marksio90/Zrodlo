@@ -130,6 +130,12 @@ export const asystentApi = {
       .then((r) => r.data),
 };
 
+// --- Komunikacja / Ogłoszenia ---
+export const komunikacjaApi = {
+  generuj: (data: unknown) =>
+    apiClient.post("/komunikacja/generuj", data).then((r) => r.data),
+};
+
 // --- Homilia ---
 export const homiliaApi = {
   generujInspiracje: (data: unknown) =>
