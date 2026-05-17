@@ -274,3 +274,44 @@ export interface OgloszeniaResponse {
   rodzinne: KanalOgloszenia;
   zastrzezenie: string;
 }
+
+// --- Archiwum / OCR ---
+
+export type OcrStatus = "oczekujacy" | "przetwarzanie" | "gotowy" | "blad";
+
+export type TypDokumentuSkan =
+  | "metryka_chrztu"
+  | "metryka_slubu"
+  | "metryka_bierzmowania"
+  | "metryka_komunii"
+  | "zaswiadczenie"
+  | "formularz"
+  | "akt_zgonu"
+  | "pismo_urzedowe"
+  | "korespondencja"
+  | "inne";
+
+export interface SkanListItem {
+  id: string;
+  nazwa_pliku: string;
+  typ_pliku: string;
+  mime_type: string;
+  rozmiar_bajtow: number;
+  typ_dokumentu: TypDokumentuSkan;
+  jednostka_wystawiajaca: string | null;
+  data_wystawienia: string | null;
+  osoby: string[];
+  tagi: string[];
+  zarchiwizowany: boolean;
+  ocr_status: OcrStatus;
+  created_at: string;
+}
+
+export interface SkanRead extends SkanListItem {
+  tresc_ocr: string | null;
+  dane_kontaktowe: Record<string, string | null>;
+  encje: Record<string, unknown>;
+  notatki: string | null;
+  ocr_blad: string | null;
+  updated_at: string;
+}

@@ -17,6 +17,7 @@ from app.routers import (
     ogloszenia, powiadomienia, wiedza,
     health, ai as ai_router, asystent as asystent_router,
     homilia as homilia_router, komunikacja as komunikacja_router,
+    archiwum as archiwum_router,
 )
 
 log = structlog.get_logger()
@@ -102,3 +103,4 @@ app.include_router(ai_router.router)
 app.include_router(asystent_router.router)
 app.include_router(homilia_router.router)
 app.include_router(komunikacja_router.router)
+app.include_router(archiwum_router.router)
