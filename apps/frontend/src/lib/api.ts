@@ -116,6 +116,20 @@ export const aiApi = {
   modele: () => apiClient.get("/ai/modele").then((r) => r.data),
 };
 
+// --- Asystent ---
+export const asystentApi = {
+  listRozmow: () => apiClient.get("/asystent/rozmowy").then((r) => r.data),
+  createRozmowa: (tytul?: string) =>
+    apiClient.post("/asystent/rozmowy", { tytul: tytul ?? "Nowa rozmowa" }).then((r) => r.data),
+  deleteRozmowa: (id: string) => apiClient.delete(`/asystent/rozmowy/${id}`),
+  listWiadomosci: (rozmowaId: string) =>
+    apiClient.get(`/asystent/rozmowy/${rozmowaId}/wiadomosci`).then((r) => r.data),
+  wyslij: (rozmowaId: string, tresc: string) =>
+    apiClient
+      .post(`/asystent/rozmowy/${rozmowaId}/wiadomosci`, { tresc })
+      .then((r) => r.data),
+};
+
 // --- Health ---
 export const healthApi = {
   check: () => apiClient.get("/health").then((r) => r.data),

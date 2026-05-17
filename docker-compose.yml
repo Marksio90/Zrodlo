@@ -69,20 +69,6 @@ services:
     networks:
       - zrodlo_net
 
-  ollama:
-    image: ollama/ollama:0.3.14
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags"]
-      interval: 30s
-      timeout: 15s
-      retries: 5
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - zrodlo_net
-
   backend:
     build:
       context: ./apps/backend
@@ -93,12 +79,12 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-zrodlo}:${POSTGRES_PASSWORD:-zrodlo}@postgres:5432/${POSTGRES_DB:-zrodlo}
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
+      QDRANT_COLLECTION: zrodlo_openai
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-zrodlo}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-zrodlo_secret_2024}
       MINIO_BUCKET: ${MINIO_BUCKET:-zrodlo-docs}
-      OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma2:2b}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       SECRET_KEY: ${SECRET_KEY:-zmien-mnie-w-produkcji-32-znaki!!}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       CORS_ORIGINS: '["http://localhost", "http://localhost:3000", "http://localhost:80"]'
@@ -129,12 +115,12 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-zrodlo}:${POSTGRES_PASSWORD:-zrodlo}@postgres:5432/${POSTGRES_DB:-zrodlo}
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
+      QDRANT_COLLECTION: zrodlo_openai
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-zrodlo}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-zrodlo_secret_2024}
       MINIO_BUCKET: ${MINIO_BUCKET:-zrodlo-docs}
-      OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma2:2b}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,7 +178,6 @@ volumes:
   redis_data:
   qdrant_data:
   minio_data:
-  ollama_data:
 
 networks:
   zrodlo_net:

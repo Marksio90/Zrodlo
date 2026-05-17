@@ -8,6 +8,7 @@ import {
   Heart,
   LayoutDashboard,
   LogOut,
+  MessageSquare,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const nav = [
   { href: "/dashboard/wspolnoty", label: "Wspólnoty", icon: Users },
   { href: "/dashboard/kalendarz", label: "Kalendarz", icon: CalendarDays },
   { href: "/dashboard/ai", label: "Wsparcie AI", icon: Sparkles },
+  { href: "/dashboard/asystent", label: "Asystent", icon: MessageSquare },
 ];
 
 export function Sidebar() {

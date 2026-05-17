@@ -181,3 +181,29 @@ export const ETYKIETY_STATUSOW: Record<StatusDokumentu, string> = {
   wydany: "Wydany",
   anulowany: "Anulowany",
 };
+
+export interface ZrodloInfo {
+  typ: string;
+  id: string | null;
+  tytul: string;
+  fragment: string | null;
+  score: number | null;
+}
+
+export interface WiadomoscRozmowy {
+  id: string;
+  rozmowa_id: string;
+  rola: "user" | "assistant";
+  tresc: string;
+  model_uzyty: string | null;
+  zrodla: ZrodloInfo[] | null;
+  tokens_uzyte: number | null;
+  created_at: string;
+}
+
+export interface Rozmowa {
+  id: string;
+  tytul: string;
+  created_at: string;
+  updated_at: string;
+}

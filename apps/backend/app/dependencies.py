@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.uzytkownicy import RolaUzytkownika, Uzytkownik
-from app.services.ai import OllamaService, get_ai
+from app.services.ai import OpenAIService, get_ai
 from app.services.auth import decode_token
 from app.services.cache import RedisCache, get_cache
 from app.services.storage import MinioStorage, get_storage
@@ -19,7 +19,7 @@ from app.services.storage import MinioStorage, get_storage
 DB = Annotated[AsyncSession, Depends(get_db)]
 Cache = Annotated[RedisCache, Depends(get_cache)]
 Storage = Annotated[MinioStorage, Depends(get_storage)]
-AI = Annotated[OllamaService, Depends(get_ai)]
+AI = Annotated[OpenAIService, Depends(get_ai)]
 
 _bearer = HTTPBearer(auto_error=False)
 
