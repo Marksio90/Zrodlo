@@ -159,6 +159,21 @@ export const archiwumApi = {
   usun: (id: string) => apiClient.delete(`/archiwum/${id}`),
 };
 
+// --- Wiedza ---
+export const wiedzaApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/wiedza", { params }).then((r) => r.data),
+  get: (id: string) => apiClient.get(`/wiedza/${id}`).then((r) => r.data),
+  create: (data: unknown) => apiClient.post("/wiedza", data).then((r) => r.data),
+  update: (id: string, data: unknown) =>
+    apiClient.patch(`/wiedza/${id}`, data).then((r) => r.data),
+  delete: (id: string) => apiClient.delete(`/wiedza/${id}`),
+  szukaj: (data: { pytanie: string; limit?: number }) =>
+    apiClient.post("/wiedza/szukaj", data).then((r) => r.data),
+  embed: (id: string) => apiClient.post(`/wiedza/${id}/embed`).then((r) => r.data),
+  embedWszystkie: () => apiClient.post("/wiedza/embed-wszystkie").then((r) => r.data),
+};
+
 // --- Komunikacja / Ogłoszenia ---
 export const komunikacjaApi = {
   generuj: (data: unknown) =>

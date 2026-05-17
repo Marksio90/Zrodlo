@@ -275,6 +275,56 @@ export interface OgloszeniaResponse {
   zastrzezenie: string;
 }
 
+// --- Wiedza ---
+
+export type KategoriaWiedzy =
+  | "liturgia"
+  | "duszpasterstwo"
+  | "administracja"
+  | "prawo_kanoniczne"
+  | "historia_parafii"
+  | "katecheza"
+  | "inne";
+
+export interface NotatkaWiedzy {
+  id: string;
+  parafia_id: string | null;
+  tytul: string;
+  tresc: string;
+  kategoria: KategoriaWiedzy;
+  tagi: string[];
+  publiczna: boolean;
+  tworca_id: string | null;
+  qdrant_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface WynikSzukania {
+  id: string;
+  tytul: string;
+  fragment: string;
+  kategoria: string;
+  score: number | null;
+}
+
+export interface SzukajWiedzyResponse {
+  odpowiedz: string;
+  wyniki: WynikSzukania[];
+  model_uzyty: string;
+}
+
+export const ETYKIETY_KATEGORII: Record<KategoriaWiedzy, string> = {
+  liturgia: "Liturgia",
+  duszpasterstwo: "Duszpasterstwo",
+  administracja: "Administracja",
+  prawo_kanoniczne: "Prawo kanoniczne",
+  historia_parafii: "Historia parafii",
+  katecheza: "Katecheza",
+  inne: "Inne",
+};
+
 // --- Archiwum / OCR ---
 
 export type OcrStatus = "oczekujacy" | "przetwarzanie" | "gotowy" | "blad";
