@@ -186,6 +186,11 @@ export const homiliaApi = {
     apiClient.post("/homilia/inspiracje", data).then((r) => r.data),
 };
 
+// --- Demo ---
+export const demoApi = {
+  seed: () => apiClient.post("/demo/seed").then((r) => r.data),
+};
+
 // --- Health ---
 export const healthApi = {
   check: () => apiClient.get("/health").then((r) => r.data),

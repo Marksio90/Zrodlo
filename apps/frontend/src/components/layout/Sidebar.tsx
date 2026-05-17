@@ -15,6 +15,7 @@ import {
   Newspaper,
   Sparkles,
   Users,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearToken, getUser } from "@/lib/auth";
@@ -31,6 +32,7 @@ const nav = [
   { href: "/dashboard/asystent", label: "Asystent", icon: MessageSquare },
   { href: "/dashboard/homilia", label: "Homilie", icon: BookOpen },
   { href: "/dashboard/wiedza", label: "Wiedza", icon: Brain },
+  { href: "/dashboard/demo", label: "Tryb Demo", icon: Zap },
 ];
 
 export function Sidebar() {
