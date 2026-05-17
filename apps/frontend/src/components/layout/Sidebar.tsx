@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays,
   FileText,
   Heart,
   LayoutDashboard,
+  LogOut,
   Sparkles,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { clearToken, getUser } from "@/lib/auth";
 
 const nav = [
   { href: "/dashboard", label: "Pulpit", icon: LayoutDashboard },
@@ -23,6 +25,13 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const user = getUser();
+
+  function handleLogout() {
+    clearToken();
+    router.replace("/login");
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col border-r bg-white">
@@ -57,8 +66,23 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t p-4">
-        <p className="text-xs text-muted-foreground text-center">
+      <div className="border-t p-4 space-y-3">
+        {user && (
+          <div className="px-1">
+            <p className="text-xs font-medium truncate">
+              {user.imie} {user.nazwisko}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Wyloguj się
+        </button>
+        <p className="text-xs text-muted-foreground text-center pt-1">
           AI wspiera, człowiek decyduje
         </p>
       </div>

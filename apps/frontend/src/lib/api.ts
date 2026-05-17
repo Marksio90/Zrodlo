@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getToken, clearToken } from "@/lib/auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
@@ -8,14 +9,35 @@ export const apiClient = axios.create({
   timeout: 30_000,
 });
 
+apiClient.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (r) => r,
   (error) => {
+    if (error.response?.status === 401) {
+      clearToken();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
     const message =
       error.response?.data?.detail ?? error.message ?? "Nieznany błąd";
     return Promise.reject(new Error(String(message)));
   }
 );
+
+// --- Auth ---
+export const authApi = {
+  login: (email: string, haslo: string) =>
+    apiClient.post("/auth/token", { email, haslo }).then((r) => r.data),
+  mnie: () => apiClient.get("/auth/mnie").then((r) => r.data),
+};
 
 // --- Intencje ---
 export const intencjeApi = {
@@ -26,6 +48,8 @@ export const intencjeApi = {
   update: (id: string, data: unknown) =>
     apiClient.patch(`/intencje/${id}`, data).then((r) => r.data),
   delete: (id: string) => apiClient.delete(`/intencje/${id}`),
+  potwierdz: (id: string) =>
+    apiClient.post(`/intencje/${id}/potwierdz`).then((r) => r.data),
 };
 
 export const liturgieApi = {
@@ -46,6 +70,8 @@ export const dokumentyApi = {
   delete: (id: string) => apiClient.delete(`/dokumenty/${id}`),
   downloadUrl: (id: string) =>
     apiClient.get(`/dokumenty/${id}/pobierz`).then((r) => r.data),
+  zatwierdz: (id: string) =>
+    apiClient.post(`/dokumenty/${id}/zatwierdz`).then((r) => r.data),
 };
 
 // --- Wspólnoty ---
@@ -70,6 +96,17 @@ export const kalendarzeApi = {
   update: (id: string, data: unknown) =>
     apiClient.patch(`/kalendarz/${id}`, data).then((r) => r.data),
   delete: (id: string) => apiClient.delete(`/kalendarz/${id}`),
+};
+
+// --- Powiadomienia ---
+export const powiadomieniaApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/powiadomienia", { params }).then((r) => r.data),
+  countUnread: () =>
+    apiClient.get("/powiadomienia/liczba-nieprzeczytanych").then((r) => r.data),
+  markRead: (id: string) =>
+    apiClient.post(`/powiadomienia/${id}/przeczytaj`).then((r) => r.data),
+  markAllRead: () => apiClient.post("/powiadomienia/przeczytaj-wszystkie"),
 };
 
 // --- AI ---

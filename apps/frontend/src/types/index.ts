@@ -119,6 +119,29 @@ export interface HealthStatus {
   services: Record<string, string>;
 }
 
+export interface Powiadomienie {
+  id: string;
+  odbiorca_id: string;
+  typ: string;
+  tytul: string;
+  tresc: string;
+  przeczytane: boolean;
+  data_przeczytania: string | null;
+  referencja_tabela: string | null;
+  referencja_id: string | null;
+  created_at: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  imie: string;
+  nazwisko: string;
+  rola: string;
+  parafia_id: string | null;
+  aktywny: boolean;
+}
+
 export const ETYKIETY_INTENCJI: Record<TypIntencji, string> = {
   za_zmarlego: "Za +",
   za_zyjacego: "Za żyjącego",
@@ -140,6 +163,15 @@ export const ETYKIETY_DOKUMENTOW: Record<TypDokumentu, string> = {
   pismo_ogolne: "Pismo ogólne",
   homilia: "Homilia",
   ogloszenia: "Ogłoszenia",
+};
+
+export const ETYKIETY_TYPY_MSZY: Record<TypMszy, string> = {
+  niedzielna: "Msza niedzielna",
+  powszednia: "Msza powszednia",
+  pogrzebowa: "Msza pogrzebowa",
+  slubna: "Msza ślubna",
+  zaduszna: "Msza zaduszna",
+  okolicznosciowa: "Msza okolicznościowa",
 };
 
 export const ETYKIETY_STATUSOW: Record<StatusDokumentu, string> = {
