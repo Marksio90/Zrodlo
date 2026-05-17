@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml .
+# Create a minimal stub so hatchling can resolve the editable install
+# before the full source is copied (preserves Docker layer cache for deps).
+RUN mkdir -p app && touch app/__init__.py
 RUN pip install -e .
 
 COPY . .

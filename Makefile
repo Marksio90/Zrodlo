@@ -1,4 +1,4 @@
-.PHONY: up down build logs ps shell-backend shell-frontend migrate pull-model health clean
+.PHONY: up down build logs ps shell-backend shell-frontend migrate health clean restart test-backend format-backend
 
 up:
 	cp -n .env.example .env 2>/dev/null || true
@@ -24,9 +24,6 @@ shell-frontend:
 
 migrate:
 	docker compose exec backend alembic upgrade head
-
-pull-model:
-	docker compose exec ollama ollama pull $(or $(MODEL),gemma2:2b)
 
 health:
 	@echo "=== Health Checks ==="

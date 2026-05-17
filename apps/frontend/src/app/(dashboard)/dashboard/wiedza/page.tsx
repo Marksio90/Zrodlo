@@ -256,12 +256,12 @@ function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
         </span>
         <div className="flex items-center gap-1 shrink-0">
           {note.publiczna ? (
-            <Globe className="h-3.5 w-3.5 text-muted-foreground" title="Publiczna" />
+            <span title="Publiczna"><Globe className="h-3.5 w-3.5 text-muted-foreground" /></span>
           ) : (
-            <Lock className="h-3.5 w-3.5 text-muted-foreground" title="Wewnętrzna" />
+            <span title="Wewnętrzna"><Lock className="h-3.5 w-3.5 text-muted-foreground" /></span>
           )}
           {note.qdrant_id && (
-            <Zap className="h-3.5 w-3.5 text-amber-500" title="Osadzona w Qdrant" />
+            <span title="Osadzona w Qdrant"><Zap className="h-3.5 w-3.5 text-amber-500" /></span>
           )}
         </div>
       </div>
