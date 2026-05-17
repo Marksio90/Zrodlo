@@ -40,10 +40,10 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
       start_period: 20s
     restart: unless-stopped
     networks:
@@ -165,7 +165,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "nginx -t && curl -sf http://localhost/health"]
+      test: ["CMD-SHELL", "nginx -t && wget -qO /dev/null http://localhost/health"]
       interval: 15s
       timeout: 5s
       retries: 3
