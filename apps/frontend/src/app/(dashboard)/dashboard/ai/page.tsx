@@ -141,7 +141,7 @@ export default function AIPage() {
 
             {homiliaMutation.isError && (
               <p className="text-sm text-destructive">
-                {homiliaMutation.error?.message ?? "Błąd połączenia z Ollama"}
+                {homiliaMutation.error?.message ?? "Błąd połączenia z serwisem AI"}
               </p>
             )}
           </CardContent>

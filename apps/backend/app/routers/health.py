@@ -36,9 +36,9 @@ async def health():
 
     try:
         ai = get_ai()
-        checks["ollama"] = "ok" if await ai.is_available() else "unavailable"
+        checks["openai"] = "ok" if await ai.is_available() else "unavailable"
     except Exception as e:
-        checks["ollama"] = f"error: {e}"
+        checks["openai"] = f"error: {e}"
 
     all_critical = all(
         v == "ok" for k, v in checks.items() if k in ("postgres", "redis")
