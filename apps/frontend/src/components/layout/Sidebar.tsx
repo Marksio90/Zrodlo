@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Archive,
   BookOpen,
+  Brain,
   CalendarDays,
   FileText,
   Heart,
@@ -29,6 +30,7 @@ const nav = [
   { href: "/dashboard/ai", label: "Wsparcie AI", icon: Sparkles },
   { href: "/dashboard/asystent", label: "Asystent", icon: MessageSquare },
   { href: "/dashboard/homilia", label: "Homilie", icon: BookOpen },
+  { href: "/dashboard/wiedza", label: "Wiedza", icon: Brain },
 ];
 
 export function Sidebar() {
