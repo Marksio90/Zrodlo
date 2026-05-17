@@ -231,6 +231,7 @@ export interface OdniesieniKKK {
 export interface WariantHomilii {
   dlugosc_min: number;
   tytul: string;
+  temat_przewodni: string;
   mysl_przewodnia: string;
   struktura: string[];
   cytaty_swietych: CytatSwietego[];
@@ -238,6 +239,7 @@ export interface WariantHomilii {
   kontekst_historyczny: string;
   praktyczne_zastosowanie: string;
   pytania_do_refleksji: string[];
+  propozycja_zakonczenia: string;
   pelny_szkic: string;
 }
 

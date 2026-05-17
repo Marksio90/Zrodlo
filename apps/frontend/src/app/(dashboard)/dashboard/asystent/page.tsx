@@ -15,6 +15,17 @@ import { asystentApi } from "@/lib/api";
 import { Rozmowa, WiadomoscRozmowy, ZrodloInfo } from "@/types";
 import { cn } from "@/lib/utils";
 
+const SUGEROWANE_PYTANIA = [
+  "Jakie dokumenty są potrzebne do chrztu?",
+  "Jakie wydarzenia mamy w tym tygodniu?",
+  "Kiedy ostatnio organizowaliśmy pielgrzymkę?",
+  "Jakie są godziny Mszy świętych?",
+  "Co jest potrzebne do przygotowania do bierzmowania?",
+  "Jakie grupy parafialne działają w parafii?",
+  "Kiedy są kolędy w tym roku?",
+  "Jakie dokumenty są potrzebne do ślubu kościelnego?",
+];
+
 export default function AsystentPage() {
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -101,6 +112,15 @@ export default function AsystentPage() {
     }
   }
 
+  async function handleSuggestedQuestion(pytanie: string) {
+    let id = activeId;
+    if (!id) {
+      const r = await createMut.mutateAsync();
+      id = r.id;
+    }
+    sendMut.mutate({ id, tresc: pytanie });
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {/* Sidebar rozmów */}
@@ -152,24 +172,33 @@ export default function AsystentPage() {
       {/* Obszar czatu */}
       <div className="flex-1 flex flex-col bg-gray-50">
         {!activeId ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
             <div className="text-center">
               <h2 className="text-lg font-semibold text-foreground">Asystent Źródła</h2>
-              <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                Zadaj pytanie o godziny Mszy, dokumenty parafialne, nadchodzące wydarzenia lub inne sprawy parafii.
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                Zadaj pytanie o dokumenty, wydarzenie, godziny Mszy lub inne sprawy parafii.
               </p>
             </div>
-            <button
-              onClick={() => createMut.mutate()}
-              disabled={createMut.isPending}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
-            >
-              <Plus className="h-4 w-4" />
-              Rozpocznij rozmowę
-            </button>
+            <div className="w-full max-w-lg">
+              <p className="text-xs text-muted-foreground text-center mb-3 uppercase tracking-wider font-medium">
+                Przykładowe pytania
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {SUGEROWANE_PYTANIA.map((pytanie) => (
+                  <button
+                    key={pytanie}
+                    onClick={() => handleSuggestedQuestion(pytanie)}
+                    disabled={createMut.isPending || sendMut.isPending}
+                    className="rounded-full border bg-white px-4 py-2 text-sm text-foreground hover:bg-primary/5 hover:border-primary/40 transition-colors disabled:opacity-50 shadow-sm"
+                  >
+                    {pytanie}
+                  </button>
+                ))}
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">AI wspiera, człowiek decyduje</p>
           </div>
         ) : (

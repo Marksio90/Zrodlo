@@ -339,8 +339,11 @@ function WariantView({
 
   return (
     <div className="p-6 space-y-7">
-      {/* Tytuł i myśl przewodnia */}
-      <div className="space-y-2">
+      {/* Tytuł, temat i myśl przewodnia */}
+      <div className="space-y-3">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+          Temat: {variant.temat_przewodni}
+        </div>
         <h2 className="text-2xl font-bold text-foreground">{variant.tytul}</h2>
         <p className="text-base text-muted-foreground italic leading-relaxed">
           „{variant.mysl_przewodnia}"
@@ -415,6 +418,18 @@ function WariantView({
           </p>
         </InfoCard>
       </div>
+
+      {/* Propozycja zakończenia */}
+      {variant.propozycja_zakonczenia && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 px-5 py-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-primary mb-2 flex items-center gap-1.5">
+            <span>🕊</span> Propozycja zakończenia
+          </h3>
+          <p className="text-sm text-foreground leading-relaxed italic">
+            {variant.propozycja_zakonczenia}
+          </p>
+        </div>
+      )}
 
       {/* Pełny szkic */}
       <div className="rounded-xl border-2 border-dashed border-primary/25 overflow-hidden">
@@ -566,6 +581,7 @@ function formatujCalyWariant(v: WariantHomilii, label: string): string {
     `HOMILIA – WARIANT ${label.toUpperCase()} (~${v.dlugosc_min} MINUT)`,
     sep,
     `TYTUŁ: ${v.tytul}`,
+    `TEMAT PRZEWODNI: ${v.temat_przewodni}`,
     `MYŚL PRZEWODNIA: ${v.mysl_przewodnia}`,
     "",
     "STRUKTURA:",
@@ -585,6 +601,9 @@ function formatujCalyWariant(v: WariantHomilii, label: string): string {
     "",
     "PYTANIA DO REFLEKSJI:",
     ...v.pytania_do_refleksji.map((q) => `  • ${q}`),
+    "",
+    "PROPOZYCJA ZAKOŃCZENIA:",
+    `  ${v.propozycja_zakonczenia}`,
     "",
     sep,
     "PEŁNY SZKIC HOMILII:",

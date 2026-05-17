@@ -57,6 +57,7 @@ class OdniesieniKKK(BaseModel):
 class WariantHomilii(BaseModel):
     dlugosc_min: int
     tytul: str
+    temat_przewodni: str
     mysl_przewodnia: str
     struktura: list[str]
     cytaty_swietych: list[CytatSwietego]
@@ -64,6 +65,7 @@ class WariantHomilii(BaseModel):
     kontekst_historyczny: str
     praktyczne_zastosowanie: str
     pytania_do_refleksji: list[str]
+    propozycja_zakonczenia: str
     pelny_szkic: str
 
 
@@ -161,13 +163,16 @@ def _buduj_prompt(req: HomiliaInspiracjeRequest) -> str:
         "  pelny_szkic: 750-900 słów",
         "",
         "Każdy wariant ma pola:",
-        "  dlugosc_min (int), tytul, mysl_przewodnia,",
+        "  dlugosc_min (int), tytul,",
+        "  temat_przewodni (jedno zdanie – główny temat teologiczny, np. 'Miłosierdzie jako odpowiedź na ludzki grzech'),",
+        "  mysl_przewodnia (krótkie motto – zdanie-klucz do rozważania, cytowalne),",
         "  struktura (lista punktów z czasem np. 'Wstęp (1 min): ...'),",
         "  cytaty_swietych (lista {autor, tresc}),",
         "  katechizm_kk (lista {numer: 'KKK XXXX', tresc}),",
         "  kontekst_historyczny,",
         "  praktyczne_zastosowanie (konkretne dla podanej grupy odbiorców),",
-        "  pytania_do_refleksji (lista 3-5 pytań),",
+        "  pytania_do_refleksji (lista 3-5 pytań życiowych i konkretnych),",
+        "  propozycja_zakonczenia (2-4 zdania – konkretna propozycja zamknięcia homilii, wezwanie do działania),",
         "  pelny_szkic",
         "",
         "Odpowiedz TYLKO jako JSON. Klucze: wariant_krotki, wariant_sredni, wariant_rozbudowany.",
@@ -188,6 +193,7 @@ def _parsuj_warianty(data: dict) -> dict:
         return WariantHomilii(
             dlugosc_min=int(raw.get("dlugosc_min", 0)),
             tytul=str(raw.get("tytul", "")),
+            temat_przewodni=str(raw.get("temat_przewodni", "")),
             mysl_przewodnia=str(raw.get("mysl_przewodnia", "")),
             struktura=[str(p) for p in (raw.get("struktura") or [])],
             cytaty_swietych=cytaty,
@@ -195,6 +201,7 @@ def _parsuj_warianty(data: dict) -> dict:
             kontekst_historyczny=str(raw.get("kontekst_historyczny", "")),
             praktyczne_zastosowanie=str(raw.get("praktyczne_zastosowanie", "")),
             pytania_do_refleksji=[str(q) for q in (raw.get("pytania_do_refleksji") or [])],
+            propozycja_zakonczenia=str(raw.get("propozycja_zakonczenia", "")),
             pelny_szkic=str(raw.get("pelny_szkic", "")),
         )
 
