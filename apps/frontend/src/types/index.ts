@@ -247,3 +247,30 @@ export interface HomiliaInspiracjeResponse {
   wariant_rozbudowany: WariantHomilii;
   zastrzezenie: string;
 }
+
+// --- Komunikacja / Ogłoszenia ---
+
+export interface WydarzenieOgloszenia {
+  tytul: string;
+  kiedy: string;
+  miejsce?: string;
+  opis?: string;
+}
+
+export interface IntencjaOgloszenia {
+  kiedy: string;
+  tresc: string;
+}
+
+export interface KanalOgloszenia {
+  www: string;
+  facebook: string;
+  sms: string;
+}
+
+export interface OgloszeniaResponse {
+  formalne: KanalOgloszenia;
+  przyjazne: KanalOgloszenia;
+  rodzinne: KanalOgloszenia;
+  zastrzezenie: string;
+}

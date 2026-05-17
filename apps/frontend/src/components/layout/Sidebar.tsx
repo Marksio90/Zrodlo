@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
+  Newspaper,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -22,6 +23,7 @@ const nav = [
   { href: "/dashboard/dokumenty", label: "Dokumenty", icon: FileText },
   { href: "/dashboard/wspolnoty", label: "Wspólnoty", icon: Users },
   { href: "/dashboard/kalendarz", label: "Kalendarz", icon: CalendarDays },
+  { href: "/dashboard/ogloszenia", label: "Ogłoszenia", icon: Newspaper },
   { href: "/dashboard/ai", label: "Wsparcie AI", icon: Sparkles },
   { href: "/dashboard/asystent", label: "Asystent", icon: MessageSquare },
   { href: "/dashboard/homilia", label: "Homilie", icon: BookOpen },
