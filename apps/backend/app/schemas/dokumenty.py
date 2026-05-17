@@ -11,6 +11,7 @@ class DokumentCreate(BaseModel):
     tytul: str = Field(..., min_length=3, max_length=500)
     dane: dict = Field(default_factory=dict)
     tresc: str | None = None
+    parafianin_id: uuid.UUID | None = None
 
 
 class DokumentUpdate(BaseModel):
@@ -18,16 +19,21 @@ class DokumentUpdate(BaseModel):
     tytul: str | None = Field(None, min_length=3, max_length=500)
     dane: dict | None = None
     tresc: str | None = None
-    zatwierdzone_przez: str | None = None
+    parafianin_id: uuid.UUID | None = None
 
 
 class DokumentRead(DokumentCreate):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    parafia_id: uuid.UUID | None
+    tworca_id: uuid.UUID | None
     status: StatusDokumentu
     plik_klucz: str | None
     wygenerowane_przez_ai: bool
     zatwierdzone_przez: str | None
+    zatwierdzone_przez_id: uuid.UUID | None
+    data_zatwierdzenia: datetime | None
+    deleted_at: datetime | None
     created_at: datetime
     updated_at: datetime

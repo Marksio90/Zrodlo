@@ -31,3 +31,12 @@ class UUIDMixin:
         default=uuid.uuid4,
         server_default=func.gen_random_uuid(),
     )
+
+
+class SoftDeleteMixin:
+    """Miękkie usuwanie – rekord istnieje w bazie, ale jest niewidoczny."""
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+    )
