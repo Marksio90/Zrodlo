@@ -207,3 +207,43 @@ export interface Rozmowa {
   created_at: string;
   updated_at: string;
 }
+
+// --- Homilia ---
+
+export type OkresLiturgiczny =
+  | "Zwykły"
+  | "Adwent"
+  | "Boże Narodzenie"
+  | "Wielki Post"
+  | "Triduum Paschalne"
+  | "Wielkanoc";
+
+export interface CytatSwietego {
+  autor: string;
+  tresc: string;
+}
+
+export interface OdniesieniKKK {
+  numer: string;
+  tresc: string;
+}
+
+export interface WariantHomilii {
+  dlugosc_min: number;
+  tytul: string;
+  mysl_przewodnia: string;
+  struktura: string[];
+  cytaty_swietych: CytatSwietego[];
+  katechizm_kk: OdniesieniKKK[];
+  kontekst_historyczny: string;
+  praktyczne_zastosowanie: string;
+  pytania_do_refleksji: string[];
+  pelny_szkic: string;
+}
+
+export interface HomiliaInspiracjeResponse {
+  wariant_krotki: WariantHomilii;
+  wariant_sredni: WariantHomilii;
+  wariant_rozbudowany: WariantHomilii;
+  zastrzezenie: string;
+}
