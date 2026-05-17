@@ -10,6 +10,7 @@ from app.models.kalendarz import Wydarzenie
 from app.models.ogloszenia import Ogloszenie
 from app.models.powiadomienia import Powiadomienie
 from app.models.wiedza import NotatkaWiedzy
+from app.models.rozmowa import Rozmowa, WiadomoscRozmowy
 
 __all__ = [
     "Base",
@@ -24,4 +25,5 @@ __all__ = [
     "Ogloszenie",
     "Powiadomienie",
     "NotatkaWiedzy",
+    "Rozmowa", "WiadomoscRozmowy",
 ]

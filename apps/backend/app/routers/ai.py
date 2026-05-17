@@ -60,7 +60,7 @@ Pamiętaj: to są propozycje do przemyślenia przez kapłana, nie gotowy tekst d
     try:
         sugestia = await ai.generate(prompt)
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Ollama niedostępna: {e}")
+        raise HTTPException(status_code=503, detail=f"Serwis AI niedostępny: {e}")
 
     return HomiliaResponse(sugestia=sugestia, model=ai._model, zastrzezenie=ZASTRZEZENIE)
 
@@ -81,7 +81,7 @@ Jeśli brakuje kluczowych danych, wskaż to wyraźnie w tekście."""
     try:
         tresc = await ai.generate(prompt)
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Ollama niedostępna: {e}")
+        raise HTTPException(status_code=503, detail=f"Serwis AI niedostępny: {e}")
 
     return DokumentResponse(tresc=tresc, model=ai._model, zastrzezenie=ZASTRZEZENIE)
 

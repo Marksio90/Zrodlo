@@ -17,9 +17,15 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
+    # OpenAI (gpt-4o-mini domyślnie, gpt-4o dla prawa kanonicznego)
+    openai_api_key: str = ""
+    openai_model_simple: str = "gpt-4o-mini"
+    openai_model_complex: str = "gpt-4o"
+    openai_embedding_model: str = "text-embedding-3-small"
+
     # Qdrant
     qdrant_url: str = "http://localhost:6333"
-    qdrant_collection: str = "zrodlo_dokumenty"
+    qdrant_collection: str = "zrodlo_openai"
 
     # MinIO
     minio_endpoint: str = "localhost:9000"
@@ -27,11 +33,6 @@ class Settings(BaseSettings):
     minio_secret_key: str = "zrodlo_secret_2024"
     minio_bucket: str = "zrodlo-docs"
     minio_secure: bool = False
-
-    # Ollama
-    ollama_url: str = "http://localhost:11434"
-    ollama_model: str = "gemma2:2b"
-    ollama_timeout: int = 120
 
     # CORS
     cors_origins: list[str] = ["http://localhost", "http://localhost:3000"]

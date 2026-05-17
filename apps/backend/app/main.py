@@ -15,7 +15,7 @@ from app.routers import (
     auth, parafia, uzytkownicy, grupy,
     intencje, dokumenty, wspolnoty, kalendarz,
     ogloszenia, powiadomienia, wiedza,
-    health, ai as ai_router,
+    health, ai as ai_router, asystent as asystent_router,
 )
 
 log = structlog.get_logger()
@@ -48,7 +48,7 @@ async def _seed_admin() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log.info("startup", environment=settings.environment, model=settings.ollama_model)
+    log.info("startup", environment=settings.environment)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     log.info("database_tables_ready")
@@ -98,3 +98,4 @@ app.include_router(ogloszenia.router)
 app.include_router(powiadomienia.router)
 app.include_router(wiedza.router)
 app.include_router(ai_router.router)
+app.include_router(asystent_router.router)

@@ -1,9 +1,8 @@
-"""Zadania indeksowania dokumentów w Qdrant."""
-import hashlib
+"""Zadania indeksowania dokumentów w Qdrant (OpenAI text-embedding-3-small)."""
 import uuid
 
-import httpx
 import structlog
+from openai import AsyncOpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
@@ -11,7 +10,7 @@ from worker.config import settings
 
 log = structlog.get_logger()
 
-VECTOR_SIZE = 768
+VECTOR_SIZE = 1536  # text-embedding-3-small
 
 
 async def ensure_collection(client: QdrantClient) -> None:
@@ -25,21 +24,13 @@ async def ensure_collection(client: QdrantClient) -> None:
 
 
 async def embed_text(text: str) -> list[float]:
-    """Generuje embedding przez Ollama (model nomic-embed-text lub fallback)."""
-    async with httpx.AsyncClient(timeout=60) as client:
-        try:
-            r = await client.post(
-                f"{settings.ollama_url}/api/embeddings",
-                json={"model": "nomic-embed-text", "prompt": text},
-            )
-            if r.status_code == 200:
-                return r.json()["embedding"]
-        except Exception:
-            pass
-        # Fallback: hash-based deterministic vector (nie semantyczny, ale działający)
-        h = hashlib.sha256(text.encode()).digest()
-        vec = [((b / 255.0) * 2 - 1) for b in h]
-        return (vec * (VECTOR_SIZE // len(vec) + 1))[:VECTOR_SIZE]
+    """Generuje embedding przez OpenAI text-embedding-3-small (1536 wymiarów)."""
+    client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=30.0)
+    response = await client.embeddings.create(
+        model=settings.openai_embedding_model,
+        input=text[:8000],
+    )
+    return response.data[0].embedding
 
 
 async def indeksuj_dokument(ctx: dict, dokument_id: str, tytul: str, tresc: str) -> dict:
@@ -47,16 +38,46 @@ async def indeksuj_dokument(ctx: dict, dokument_id: str, tytul: str, tresc: str)
     try:
         client = QdrantClient(url=settings.qdrant_url)
         await ensure_collection(client)
-        tekst = f"{tytul}\n\n{tresc}"[:4096]
+        tekst = f"{tytul}\n\n{tresc}"[:8000]
         vector = await embed_text(tekst)
         point = PointStruct(
             id=str(uuid.UUID(dokument_id)),
             vector=vector,
-            payload={"dokument_id": dokument_id, "tytul": tytul},
+            payload={
+                "dokument_id": dokument_id,
+                "tytul": tytul,
+                "tresc": tresc[:500],
+                "typ": "dokument",
+            },
         )
         client.upsert(collection_name=settings.qdrant_collection, points=[point])
         log.info("indexing_done", dokument_id=dokument_id)
         return {"status": "ok", "dokument_id": dokument_id}
     except Exception as e:
         log.error("indexing_error", dokument_id=dokument_id, error=str(e))
+        raise
+
+
+async def indeksuj_notatke_wiedzy(ctx: dict, notatka_id: str, tytul: str, tresc: str) -> dict:
+    log.info("indexing_notatka_start", notatka_id=notatka_id)
+    try:
+        client = QdrantClient(url=settings.qdrant_url)
+        await ensure_collection(client)
+        tekst = f"{tytul}\n\n{tresc}"[:8000]
+        vector = await embed_text(tekst)
+        point = PointStruct(
+            id=str(uuid.UUID(notatka_id)),
+            vector=vector,
+            payload={
+                "notatka_id": notatka_id,
+                "tytul": tytul,
+                "tresc": tresc[:500],
+                "typ": "wiedza",
+            },
+        )
+        client.upsert(collection_name=settings.qdrant_collection, points=[point])
+        log.info("indexing_notatka_done", notatka_id=notatka_id)
+        return {"status": "ok", "notatka_id": notatka_id}
+    except Exception as e:
+        log.error("indexing_notatka_error", notatka_id=notatka_id, error=str(e))
         raise
