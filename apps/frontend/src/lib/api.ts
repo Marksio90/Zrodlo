@@ -1,0 +1,85 @@
+import axios from "axios";
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+
+export const apiClient = axios.create({
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+  timeout: 30_000,
+});
+
+apiClient.interceptors.response.use(
+  (r) => r,
+  (error) => {
+    const message =
+      error.response?.data?.detail ?? error.message ?? "Nieznany błąd";
+    return Promise.reject(new Error(String(message)));
+  }
+);
+
+// --- Intencje ---
+export const intencjeApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/intencje", { params }).then((r) => r.data),
+  get: (id: string) => apiClient.get(`/intencje/${id}`).then((r) => r.data),
+  create: (data: unknown) => apiClient.post("/intencje", data).then((r) => r.data),
+  update: (id: string, data: unknown) =>
+    apiClient.patch(`/intencje/${id}`, data).then((r) => r.data),
+  delete: (id: string) => apiClient.delete(`/intencje/${id}`),
+};
+
+export const liturgieApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/intencje/liturgie", { params }).then((r) => r.data),
+  create: (data: unknown) =>
+    apiClient.post("/intencje/liturgie", data).then((r) => r.data),
+};
+
+// --- Dokumenty ---
+export const dokumentyApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/dokumenty", { params }).then((r) => r.data),
+  get: (id: string) => apiClient.get(`/dokumenty/${id}`).then((r) => r.data),
+  create: (data: unknown) => apiClient.post("/dokumenty", data).then((r) => r.data),
+  update: (id: string, data: unknown) =>
+    apiClient.patch(`/dokumenty/${id}`, data).then((r) => r.data),
+  delete: (id: string) => apiClient.delete(`/dokumenty/${id}`),
+  downloadUrl: (id: string) =>
+    apiClient.get(`/dokumenty/${id}/pobierz`).then((r) => r.data),
+};
+
+// --- Wspólnoty ---
+export const wspolnotyApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/wspolnoty", { params }).then((r) => r.data),
+  get: (id: string) => apiClient.get(`/wspolnoty/${id}`).then((r) => r.data),
+  create: (data: unknown) => apiClient.post("/wspolnoty", data).then((r) => r.data),
+  delete: (id: string) => apiClient.delete(`/wspolnoty/${id}`),
+  listCzlonkow: (id: string) =>
+    apiClient.get(`/wspolnoty/${id}/czlonkowie`).then((r) => r.data),
+  addCzlonek: (id: string, data: unknown) =>
+    apiClient.post(`/wspolnoty/${id}/czlonkowie`, data).then((r) => r.data),
+};
+
+// --- Kalendarz ---
+export const kalendarzeApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/kalendarz", { params }).then((r) => r.data),
+  get: (id: string) => apiClient.get(`/kalendarz/${id}`).then((r) => r.data),
+  create: (data: unknown) => apiClient.post("/kalendarz", data).then((r) => r.data),
+  update: (id: string, data: unknown) =>
+    apiClient.patch(`/kalendarz/${id}`, data).then((r) => r.data),
+  delete: (id: string) => apiClient.delete(`/kalendarz/${id}`),
+};
+
+// --- AI ---
+export const aiApi = {
+  homilia: (data: unknown) => apiClient.post("/ai/homilia", data).then((r) => r.data),
+  dokument: (data: unknown) => apiClient.post("/ai/dokument", data).then((r) => r.data),
+  modele: () => apiClient.get("/ai/modele").then((r) => r.data),
+};
+
+// --- Health ---
+export const healthApi = {
+  check: () => apiClient.get("/health").then((r) => r.data),
+};

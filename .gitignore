@@ -1,0 +1,38 @@
+# Środowisko
+.env
+.env.local
+.env.*.local
+
+# Node.js
+node_modules/
+.next/
+apps/frontend/.next/
+apps/frontend/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+dist/
+*.egg-info/
+.ruff_cache/
+
+# Docker
+.docker/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logi
+*.log
+logs/
+
+# Dane lokalne
+data/
