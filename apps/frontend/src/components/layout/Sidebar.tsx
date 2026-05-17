@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  BookOpen,
   CalendarDays,
   FileText,
   Heart,
@@ -23,6 +24,7 @@ const nav = [
   { href: "/dashboard/kalendarz", label: "Kalendarz", icon: CalendarDays },
   { href: "/dashboard/ai", label: "Wsparcie AI", icon: Sparkles },
   { href: "/dashboard/asystent", label: "Asystent", icon: MessageSquare },
+  { href: "/dashboard/homilia", label: "Homilie", icon: BookOpen },
 ];
 
 export function Sidebar() {
