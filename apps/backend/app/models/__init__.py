@@ -11,6 +11,7 @@ from app.models.ogloszenia import Ogloszenie
 from app.models.powiadomienia import Powiadomienie
 from app.models.wiedza import NotatkaWiedzy
 from app.models.rozmowa import Rozmowa, WiadomoscRozmowy
+from app.models.skan import SkanDokumentu
 
 __all__ = [
     "Base",
@@ -26,4 +27,5 @@ __all__ = [
     "Powiadomienie",
     "NotatkaWiedzy",
     "Rozmowa", "WiadomoscRozmowy",
+    "SkanDokumentu",
 ]

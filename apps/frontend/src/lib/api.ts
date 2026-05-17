@@ -130,6 +130,35 @@ export const asystentApi = {
       .then((r) => r.data),
 };
 
+// --- Archiwum / OCR ---
+export const archiwumApi = {
+  upload: (plik: File, notatki?: string, onProgress?: (p: number) => void) => {
+    const fd = new FormData();
+    fd.append("plik", plik);
+    if (notatki) fd.append("notatki", notatki);
+    return apiClient
+      .post("/archiwum/upload", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (e) => {
+          if (e.total && onProgress) onProgress(Math.round((e.loaded / e.total) * 60));
+        },
+        timeout: 120_000,
+      })
+      .then((r) => r.data);
+  },
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/archiwum/", { params }).then((r) => r.data),
+  get: (id: string) => apiClient.get(`/archiwum/${id}`).then((r) => r.data),
+  update: (id: string, data: unknown) =>
+    apiClient.patch(`/archiwum/${id}`, data).then((r) => r.data),
+  archiwizuj: (id: string) =>
+    apiClient.post(`/archiwum/${id}/archiwizuj`).then((r) => r.data),
+  ponowOCR: (id: string) =>
+    apiClient.post(`/archiwum/${id}/ponow-ocr`).then((r) => r.data),
+  pobierz: (id: string) => apiClient.get(`/archiwum/${id}/pobierz`).then((r) => r.data),
+  usun: (id: string) => apiClient.delete(`/archiwum/${id}`),
+};
+
 // --- Komunikacja / Ogłoszenia ---
 export const komunikacjaApi = {
   generuj: (data: unknown) =>

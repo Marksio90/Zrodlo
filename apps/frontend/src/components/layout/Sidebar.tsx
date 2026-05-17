@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Archive,
   BookOpen,
   CalendarDays,
   FileText,
@@ -21,6 +22,7 @@ const nav = [
   { href: "/dashboard", label: "Pulpit", icon: LayoutDashboard },
   { href: "/dashboard/intencje", label: "Intencje", icon: Heart },
   { href: "/dashboard/dokumenty", label: "Dokumenty", icon: FileText },
+  { href: "/dashboard/archiwum", label: "Archiwum OCR", icon: Archive },
   { href: "/dashboard/wspolnoty", label: "Wspólnoty", icon: Users },
   { href: "/dashboard/kalendarz", label: "Kalendarz", icon: CalendarDays },
   { href: "/dashboard/ogloszenia", label: "Ogłoszenia", icon: Newspaper },
