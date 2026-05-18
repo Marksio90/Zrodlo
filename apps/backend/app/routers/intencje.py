@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import Depends, APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DB
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/intencje", tags=["Intencje"])
 # ── Liturgie ─────────────────────────────────────────────
 
 @router.post("/liturgie", response_model=LiturgiaRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("liturgia", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("liturgia", "tworz"))])
 async def create_liturgia(payload: LiturgiaCreate, db: DB, current_user: CurrentUser):
     obj = Liturgia(**payload.model_dump(), tworca_id=current_user.id)
     obj.parafia_id = current_user.parafia_id
@@ -63,7 +63,7 @@ async def get_liturgia(liturgia_id: uuid.UUID, db: DB, _: CurrentUser):
 # ── Intencje ─────────────────────────────────────────────
 
 @router.post("", response_model=IntencjaRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("intencja", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("intencja", "tworz"))])
 async def create_intencja(payload: IntencjaCreate, db: DB, current_user: CurrentUser):
     if payload.liturgia_id:
         liturgia = await db.get(Liturgia, payload.liturgia_id)
@@ -108,7 +108,7 @@ async def get_intencja(intencja_id: uuid.UUID, db: DB, _: CurrentUser):
 
 
 @router.patch("/{intencja_id}", response_model=IntencjaRead,
-              dependencies=[wymagaj_uprawnienia("intencja", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("intencja", "edytuj"))])
 async def update_intencja(intencja_id: uuid.UUID, payload: IntencjaUpdate, db: DB, current_user: CurrentUser):
     obj = await db.get(Intencja, intencja_id)
     if not obj or obj.deleted_at is not None:
@@ -127,7 +127,7 @@ async def update_intencja(intencja_id: uuid.UUID, payload: IntencjaUpdate, db: D
 
 
 @router.post("/{intencja_id}/potwierdz", response_model=IntencjaRead,
-             dependencies=[wymagaj_uprawnienia("intencja", "zatwierdz")])
+             dependencies=[Depends(wymagaj_uprawnienia("intencja", "zatwierdz"))])
 async def potwierdz_intencje(intencja_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Intencja, intencja_id)
     if not obj or obj.deleted_at is not None:
@@ -147,7 +147,7 @@ async def potwierdz_intencje(intencja_id: uuid.UUID, db: DB, current_user: Curre
 
 
 @router.delete("/{intencja_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("intencja", "usun")])
+               dependencies=[Depends(wymagaj_uprawnienia("intencja", "usun"))])
 async def soft_delete_intencja(intencja_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Intencja, intencja_id)
     if not obj or obj.deleted_at is not None:

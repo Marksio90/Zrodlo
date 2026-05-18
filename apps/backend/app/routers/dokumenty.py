@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import Depends, APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DB, Storage
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/dokumenty", tags=["Dokumenty"])
 
 
 @router.post("", response_model=DokumentRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("dokument", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("dokument", "tworz"))])
 async def create_dokument(payload: DokumentCreate, db: DB, current_user: CurrentUser):
     obj = Dokument(**payload.model_dump(), tworca_id=current_user.id)
     if not obj.parafia_id:
@@ -57,7 +57,7 @@ async def get_dokument(dokument_id: uuid.UUID, db: DB, _: CurrentUser):
 
 
 @router.patch("/{dokument_id}", response_model=DokumentRead,
-              dependencies=[wymagaj_uprawnienia("dokument", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("dokument", "edytuj"))])
 async def update_dokument(dokument_id: uuid.UUID, payload: DokumentUpdate, db: DB, current_user: CurrentUser):
     obj = await db.get(Dokument, dokument_id)
     if not obj or obj.deleted_at is not None:
@@ -76,7 +76,7 @@ async def update_dokument(dokument_id: uuid.UUID, payload: DokumentUpdate, db: D
 
 
 @router.post("/{dokument_id}/zatwierdz", response_model=DokumentRead,
-             dependencies=[wymagaj_uprawnienia("dokument", "zatwierdz")])
+             dependencies=[Depends(wymagaj_uprawnienia("dokument", "zatwierdz"))])
 async def zatwierdz_dokument(dokument_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Dokument, dokument_id)
     if not obj or obj.deleted_at is not None:
@@ -97,7 +97,7 @@ async def zatwierdz_dokument(dokument_id: uuid.UUID, db: DB, current_user: Curre
 
 
 @router.delete("/{dokument_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("dokument", "usun")])
+               dependencies=[Depends(wymagaj_uprawnienia("dokument", "usun"))])
 async def soft_delete_dokument(dokument_id: uuid.UUID, db: DB, current_user: CurrentUser, storage: Storage):
     obj = await db.get(Dokument, dokument_id)
     if not obj or obj.deleted_at is not None:
