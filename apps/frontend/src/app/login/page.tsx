@@ -104,7 +104,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          AI wspiera człowieka – nie zastępuje kapłana
+          Kompletny system zarządzania administracją parafialną
         </p>
       </div>
     </div>
