@@ -199,7 +199,7 @@ export default function AsystentPage() {
                 ))}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">AI wspiera, człowiek decyduje</p>
+            <p className="text-xs text-muted-foreground">Asystent oparty na wiedzy Twojej parafii</p>
           </div>
         ) : (
           <>
@@ -258,7 +258,7 @@ export default function AsystentPage() {
                 </button>
               </div>
               <p className="mt-2 text-xs text-muted-foreground text-center">
-                AI wspiera, człowiek decyduje · Odpowiedzi wymagają weryfikacji kapłana
+                Odpowiedzi generowane na podstawie dokumentów i wiedzy parafii
               </p>
             </div>
           </>

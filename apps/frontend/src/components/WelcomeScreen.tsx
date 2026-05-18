@@ -47,8 +47,8 @@ export function WelcomeScreen() {
         <div className="px-8 py-6 space-y-4">
           <Feature
             icon="🕊"
-            title="AI wspiera – kapłan decyduje"
-            desc="Każda treść wygenerowana przez AI wymaga zatwierdzenia. System nie podejmuje decyzji duszpasterskich."
+            title="Asystent AI do pracy parafialnej"
+            desc="Przygotuj homilię, znajdź dokument, odpowiedz na pytanie parafianina – AI robi szkic, ksiądz zatwierdza."
           />
           <Feature
             icon="📋"

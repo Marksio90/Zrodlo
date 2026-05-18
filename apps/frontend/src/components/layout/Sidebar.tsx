@@ -95,7 +95,7 @@ export function Sidebar() {
           Wyloguj się
         </button>
         <p className="text-xs text-muted-foreground text-center pt-1">
-          AI wspiera, człowiek decyduje
+          Źródło · System parafialny
         </p>
       </div>
     </aside>
