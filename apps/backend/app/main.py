@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
 from app.database import async_session_factory, engine
@@ -53,7 +54,10 @@ async def _seed_admin() -> None:
 async def lifespan(app: FastAPI):
     log.info("startup", environment=settings.environment)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.run_sync(Base.metadata.create_all)
+        except IntegrityError:
+            pass  # Another worker already created the tables concurrently
     log.info("database_tables_ready")
 
     if settings.is_development:
