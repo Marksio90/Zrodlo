@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import Depends, APIRouter, HTTPException, Query, status
 from sqlalchemy import func, select
 
 from app.dependencies import CurrentUser, DB
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/grupy", tags=["Grupy Parafialne"])
 
 
 @router.post("", response_model=GrupaParafialnaRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("grupa", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("grupa", "tworz"))])
 async def create_grupa(payload: GrupaParafialnaCreate, db: DB, current_user: CurrentUser):
     obj = GrupaParafialna(**payload.model_dump())
     if not obj.parafia_id:
@@ -73,7 +73,7 @@ async def get_grupa(grupa_id: uuid.UUID, db: DB, _: CurrentUser):
 
 
 @router.patch("/{grupa_id}", response_model=GrupaParafialnaRead,
-              dependencies=[wymagaj_uprawnienia("grupa", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("grupa", "edytuj"))])
 async def update_grupa(
     grupa_id: uuid.UUID, payload: GrupaParafialnaUpdate, db: DB, current_user: CurrentUser
 ):
@@ -94,7 +94,7 @@ async def update_grupa(
 
 
 @router.delete("/{grupa_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("grupa", "usun")])
+               dependencies=[Depends(wymagaj_uprawnienia("grupa", "usun"))])
 async def soft_delete_grupa(grupa_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(GrupaParafialna, grupa_id)
     if not obj or obj.deleted_at is not None:
@@ -113,7 +113,7 @@ async def soft_delete_grupa(grupa_id: uuid.UUID, db: DB, current_user: CurrentUs
 
 @router.post("/{grupa_id}/czlonkowie", response_model=CzlonekGrupyRead,
              status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("grupa", "edytuj")])
+             dependencies=[Depends(wymagaj_uprawnienia("grupa", "edytuj"))])
 async def add_czlonek(
     grupa_id: uuid.UUID, payload: CzlonekGrupyCreate, db: DB, current_user: CurrentUser
 ):
@@ -140,7 +140,7 @@ async def list_czlonkowie(
 
 
 @router.delete("/{grupa_id}/czlonkowie/{czlonek_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("grupa", "edytuj")])
+               dependencies=[Depends(wymagaj_uprawnienia("grupa", "edytuj"))])
 async def remove_czlonek(
     grupa_id: uuid.UUID, czlonek_id: uuid.UUID, db: DB, current_user: CurrentUser
 ):

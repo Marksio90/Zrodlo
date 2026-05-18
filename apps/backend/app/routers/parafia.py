@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import Depends, APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DB
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/parafia", tags=["Parafia"])
 
 
 @router.post("", response_model=ParafiaRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("parafia", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("parafia", "tworz"))])
 async def create_parafia(payload: ParafiaCreate, db: DB, current_user: CurrentUser):
     obj = Parafia(**payload.model_dump())
     db.add(obj)
@@ -44,7 +44,7 @@ async def get_parafia(parafia_id: uuid.UUID, db: DB, _: CurrentUser):
 
 
 @router.patch("/{parafia_id}", response_model=ParafiaRead,
-              dependencies=[wymagaj_uprawnienia("parafia", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("parafia", "edytuj"))])
 async def update_parafia(parafia_id: uuid.UUID, payload: ParafiaUpdate, db: DB, current_user: CurrentUser):
     obj = await db.get(Parafia, parafia_id)
     if not obj:

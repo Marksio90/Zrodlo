@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 import structlog
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import Depends, APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import or_, select
 
@@ -195,7 +195,7 @@ async def szukaj_semantycznie(body: SzukajRequest, db: DB, current_user: Current
 
 
 @router.post("/embed-wszystkie", status_code=200,
-             dependencies=[wymagaj_uprawnienia("wiedza", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("wiedza", "tworz"))])
 async def embed_wszystkie(db: DB, current_user: CurrentUser, ai: AI):
     """Batch embedding wszystkich notatek bez qdrant_id (np. po migracji)."""
     rows = (await db.execute(
@@ -222,7 +222,7 @@ async def embed_wszystkie(db: DB, current_user: CurrentUser, ai: AI):
 # ---------------------------------------------------------------------------
 
 @router.post("", response_model=NotatkaWiedzyRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("wiedza", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("wiedza", "tworz"))])
 async def create_notatka(payload: NotatkaWiedzyCreate, db: DB, current_user: CurrentUser, ai: AI):
     obj = NotatkaWiedzy(**payload.model_dump(), tworca_id=current_user.id)
     if not obj.parafia_id:
@@ -283,7 +283,7 @@ async def get_notatka(notatka_id: uuid.UUID, db: DB, current_user: CurrentUser):
 
 
 @router.patch("/{notatka_id}", response_model=NotatkaWiedzyRead,
-              dependencies=[wymagaj_uprawnienia("wiedza", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("wiedza", "edytuj"))])
 async def update_notatka(
     notatka_id: uuid.UUID, payload: NotatkaWiedzyUpdate, db: DB, current_user: CurrentUser, ai: AI
 ):
@@ -310,7 +310,7 @@ async def update_notatka(
 
 
 @router.delete("/{notatka_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("wiedza", "usun")])
+               dependencies=[Depends(wymagaj_uprawnienia("wiedza", "usun"))])
 async def soft_delete_notatka(notatka_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(NotatkaWiedzy, notatka_id)
     if not obj or obj.deleted_at is not None:
@@ -328,7 +328,7 @@ async def soft_delete_notatka(notatka_id: uuid.UUID, db: DB, current_user: Curre
 
 
 @router.post("/{notatka_id}/embed", response_model=NotatkaWiedzyRead,
-             dependencies=[wymagaj_uprawnienia("wiedza", "edytuj")])
+             dependencies=[Depends(wymagaj_uprawnienia("wiedza", "edytuj"))])
 async def embed_notatke(notatka_id: uuid.UUID, db: DB, current_user: CurrentUser, ai: AI):
     """Ręczne embedowanie pojedynczej notatki (naprawa po błędzie)."""
     obj = await db.get(NotatkaWiedzy, notatka_id)

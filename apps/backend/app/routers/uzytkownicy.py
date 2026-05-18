@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import Depends, APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DB
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/uzytkownicy", tags=["Użytkownicy"])
 # ── Użytkownicy ───────────────────────────────────────────
 
 @router.get("", response_model=list[UzytkownikRead],
-            dependencies=[wymagaj_uprawnienia("uzytkownik", "czytaj")])
+            dependencies=[Depends(wymagaj_uprawnienia("uzytkownik", "czytaj"))])
 async def list_uzytkownicy(
     db: DB, _: CurrentUser,
     rola: str | None = Query(None),
@@ -38,7 +38,7 @@ async def list_uzytkownicy(
 
 
 @router.get("/{user_id}", response_model=UzytkownikRead,
-            dependencies=[wymagaj_uprawnienia("uzytkownik", "czytaj")])
+            dependencies=[Depends(wymagaj_uprawnienia("uzytkownik", "czytaj"))])
 async def get_uzytkownik(user_id: uuid.UUID, db: DB, _: CurrentUser):
     obj = await db.get(Uzytkownik, user_id)
     if not obj or obj.deleted_at is not None:
@@ -47,7 +47,7 @@ async def get_uzytkownik(user_id: uuid.UUID, db: DB, _: CurrentUser):
 
 
 @router.patch("/{user_id}", response_model=UzytkownikRead,
-              dependencies=[wymagaj_uprawnienia("uzytkownik", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("uzytkownik", "edytuj"))])
 async def update_uzytkownik(
     user_id: uuid.UUID, payload: UzytkownikUpdate, db: DB, current_user: CurrentUser
 ):
@@ -69,7 +69,7 @@ async def update_uzytkownik(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("uzytkownik", "usun")])
+               dependencies=[Depends(wymagaj_uprawnienia("uzytkownik", "usun"))])
 async def soft_delete_uzytkownik(user_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Uzytkownik, user_id)
     if not obj or obj.deleted_at is not None:
@@ -88,7 +88,7 @@ async def soft_delete_uzytkownik(user_id: uuid.UUID, db: DB, current_user: Curre
 # ── Proboszczowie ────────────────────────────────────────
 
 @router.post("/proboszczowie", response_model=ProboszczRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("uzytkownik", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("uzytkownik", "tworz"))])
 async def create_proboszcz(payload: ProboszczCreate, db: DB, current_user: CurrentUser):
     uzytkownik = await db.get(Uzytkownik, payload.uzytkownik_id)
     if not uzytkownik:
@@ -107,7 +107,7 @@ async def create_proboszcz(payload: ProboszczCreate, db: DB, current_user: Curre
 
 
 @router.post("/wikariusze", response_model=WikariuszRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("uzytkownik", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("uzytkownik", "tworz"))])
 async def create_wikariusz(payload: WikariuszCreate, db: DB, current_user: CurrentUser):
     uzytkownik = await db.get(Uzytkownik, payload.uzytkownik_id)
     if not uzytkownik:
@@ -128,7 +128,7 @@ async def create_wikariusz(payload: WikariuszCreate, db: DB, current_user: Curre
 # ── Parafianie ────────────────────────────────────────────
 
 @router.get("/parafianie", response_model=list[ParafianinRead],
-            dependencies=[wymagaj_uprawnienia("parafianin", "czytaj")])
+            dependencies=[Depends(wymagaj_uprawnienia("parafianin", "czytaj"))])
 async def list_parafianie(
     db: DB, current_user: CurrentUser,
     limit: int = Query(50, le=500),
@@ -145,7 +145,7 @@ async def list_parafianie(
 
 
 @router.post("/parafianie", response_model=ParafianinRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("parafianin", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("parafianin", "tworz"))])
 async def create_parafianin(payload: ParafianinCreate, db: DB, current_user: CurrentUser):
     obj = Parafianin(**payload.model_dump())
     if not obj.parafia_id:
@@ -162,7 +162,7 @@ async def create_parafianin(payload: ParafianinCreate, db: DB, current_user: Cur
 
 
 @router.get("/parafianie/{parafianin_id}", response_model=ParafianinRead,
-            dependencies=[wymagaj_uprawnienia("parafianin", "czytaj")])
+            dependencies=[Depends(wymagaj_uprawnienia("parafianin", "czytaj"))])
 async def get_parafianin(parafianin_id: uuid.UUID, db: DB, _: CurrentUser):
     obj = await db.get(Parafianin, parafianin_id)
     if not obj or obj.deleted_at is not None:
@@ -171,7 +171,7 @@ async def get_parafianin(parafianin_id: uuid.UUID, db: DB, _: CurrentUser):
 
 
 @router.patch("/parafianie/{parafianin_id}", response_model=ParafianinRead,
-              dependencies=[wymagaj_uprawnienia("parafianin", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("parafianin", "edytuj"))])
 async def update_parafianin(
     parafianin_id: uuid.UUID, payload: ParafianinUpdate, db: DB, current_user: CurrentUser
 ):
@@ -192,7 +192,7 @@ async def update_parafianin(
 
 
 @router.delete("/parafianie/{parafianin_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("parafianin", "usun")])
+               dependencies=[Depends(wymagaj_uprawnienia("parafianin", "usun"))])
 async def soft_delete_parafianin(parafianin_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Parafianin, parafianin_id)
     if not obj or obj.deleted_at is not None:

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import Depends, APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DB
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/ogloszenia", tags=["Ogłoszenia"])
 
 
 @router.post("", response_model=OgloszenieRead, status_code=status.HTTP_201_CREATED,
-             dependencies=[wymagaj_uprawnienia("ogloszenie", "tworz")])
+             dependencies=[Depends(wymagaj_uprawnienia("ogloszenie", "tworz"))])
 async def create_ogloszenie(payload: OgloszenieCreate, db: DB, current_user: CurrentUser):
     obj = Ogloszenie(**payload.model_dump(), tworca_id=current_user.id)
     if not obj.parafia_id:
@@ -54,7 +54,7 @@ async def get_ogloszenie(ogloszenie_id: uuid.UUID, db: DB, _: CurrentUser):
 
 
 @router.patch("/{ogloszenie_id}", response_model=OgloszenieRead,
-              dependencies=[wymagaj_uprawnienia("ogloszenie", "edytuj")])
+              dependencies=[Depends(wymagaj_uprawnienia("ogloszenie", "edytuj"))])
 async def update_ogloszenie(
     ogloszenie_id: uuid.UUID, payload: OgloszenieUpdate, db: DB, current_user: CurrentUser
 ):
@@ -75,7 +75,7 @@ async def update_ogloszenie(
 
 
 @router.post("/{ogloszenie_id}/zatwierdz", response_model=OgloszenieRead,
-             dependencies=[wymagaj_uprawnienia("ogloszenie", "zatwierdz")])
+             dependencies=[Depends(wymagaj_uprawnienia("ogloszenie", "zatwierdz"))])
 async def zatwierdz_ogloszenie(ogloszenie_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Ogloszenie, ogloszenie_id)
     if not obj or obj.deleted_at is not None:
@@ -95,7 +95,7 @@ async def zatwierdz_ogloszenie(ogloszenie_id: uuid.UUID, db: DB, current_user: C
 
 
 @router.delete("/{ogloszenie_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[wymagaj_uprawnienia("ogloszenie", "usun")])
+               dependencies=[Depends(wymagaj_uprawnienia("ogloszenie", "usun"))])
 async def soft_delete_ogloszenie(ogloszenie_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Ogloszenie, ogloszenie_id)
     if not obj or obj.deleted_at is not None:
