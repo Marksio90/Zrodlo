@@ -13,6 +13,7 @@ from app.models.wiedza import NotatkaWiedzy
 from app.models.rozmowa import Rozmowa, WiadomoscRozmowy
 from app.models.skan import SkanDokumentu
 from app.models.rodo import AkceptacjaUmowy
+from app.models.subskrypcja import Subskrypcja
 
 __all__ = [
     "Base",
@@ -30,4 +31,5 @@ __all__ = [
     "Rozmowa", "WiadomoscRozmowy",
     "SkanDokumentu",
     "AkceptacjaUmowy",
+    "Subskrypcja",
 ]

@@ -21,6 +21,7 @@ from app.routers import (
     archiwum as archiwum_router,
     demo as demo_router,
     rodo as rodo_router,
+    subskrypcja as subskrypcja_router,
 )
 
 log = structlog.get_logger()
@@ -112,3 +113,4 @@ app.include_router(komunikacja_router.router)
 app.include_router(archiwum_router.router)
 app.include_router(demo_router.router)
 app.include_router(rodo_router.router)
+app.include_router(subskrypcja_router.router)
