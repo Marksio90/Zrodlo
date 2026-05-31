@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brak połączenia – Źródło</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      padding: 2.5rem 2rem;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    .logo {
+      width: 64px; height: 64px;
+      background: #2563eb;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 1.75rem; font-weight: bold; color: white;
+      font-family: Georgia, serif;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: .5rem; }
+    p { font-size: .9rem; color: #64748b; line-height: 1.6; margin-bottom: 1.5rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: #2563eb; color: white;
+      border: none; border-radius: .5rem;
+      padding: .65rem 1.25rem;
+      font-size: .875rem; font-weight: 500;
+      cursor: pointer; text-decoration: none;
+      transition: background .15s;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .hint { margin-top: 1.25rem; font-size: .75rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Ź</div>
+    <h1>Brak połączenia z siecią</h1>
+    <p>
+      Nie można załadować strony. Sprawdź połączenie internetowe
+      i spróbuj ponownie. Wcześniej przeglądane strony mogą być
+      dostępne z pamięci podręcznej.
+    </p>
+    <button class="btn" onclick="window.location.reload()">
+      ↻ Spróbuj ponownie
+    </button>
+    <p class="hint">Źródło · Cyfrowa kancelaria parafialna</p>
+  </div>
+</body>
+</html>

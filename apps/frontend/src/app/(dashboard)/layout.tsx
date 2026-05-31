@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { getToken, getUser } from "@/lib/auth";
 import { onboardingApi } from "@/lib/api";
 
@@ -58,6 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
+      <PwaInstallBanner />
     </div>
   );
 }
