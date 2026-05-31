@@ -5,8 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DB
+from app.models.audit import OperacjaAudit
 from app.models.kalendarz import Wydarzenie
 from app.schemas.kalendarz import WydarzenieCreate, WydarzenieRead, WydarzenieUpdate
+from app.services import audit as audit_svc
 from app.services.permissions import wymagaj_uprawnienia
 
 router = APIRouter(prefix="/kalendarz", tags=["Kalendarz"])
@@ -28,6 +30,15 @@ async def create_wydarzenie(payload: WydarzenieCreate, db: DB, current_user: Cur
     db.add(obj)
     await db.flush()
     await db.refresh(obj)
+    await audit_svc.zapisz(
+        db,
+        tabela="wydarzenia",
+        rekord_id=obj.id,
+        operacja=OperacjaAudit.UTWORZONO,
+        uzytkownik_id=current_user.id,
+        parafia_id=current_user.parafia_id,
+        nowe_wartosci=audit_svc.snapshot(obj),
+    )
     return obj
 
 
@@ -64,10 +75,21 @@ async def get_wydarzenie(wydarzenie_id: uuid.UUID, db: DB, current_user: Current
 async def update_wydarzenie(wydarzenie_id: uuid.UUID, payload: WydarzenieUpdate, db: DB, current_user: CurrentUser):
     obj = await db.get(Wydarzenie, wydarzenie_id)
     _or_404_tenant(obj, current_user, "Wydarzenie nie znalezione")
+    stare = audit_svc.snapshot(obj)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(obj, field, value)
     await db.flush()
     await db.refresh(obj)
+    await audit_svc.zapisz(
+        db,
+        tabela="wydarzenia",
+        rekord_id=obj.id,
+        operacja=OperacjaAudit.ZAKTUALIZOWANO,
+        uzytkownik_id=current_user.id,
+        parafia_id=current_user.parafia_id,
+        stare_wartosci=stare,
+        nowe_wartosci=audit_svc.snapshot(obj),
+    )
     return obj
 
 
@@ -76,4 +98,12 @@ async def update_wydarzenie(wydarzenie_id: uuid.UUID, payload: WydarzenieUpdate,
 async def delete_wydarzenie(wydarzenie_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Wydarzenie, wydarzenie_id)
     _or_404_tenant(obj, current_user, "Wydarzenie nie znalezione")
+    await audit_svc.zapisz(
+        db,
+        tabela="wydarzenia",
+        rekord_id=obj.id,
+        operacja=OperacjaAudit.USUNIETO,
+        uzytkownik_id=current_user.id,
+        parafia_id=current_user.parafia_id,
+    )
     await db.delete(obj)
