@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +13,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { authApi } from "@/lib/api";
 import { getToken, setToken } from "@/lib/auth";
 
+const loginSchema = z.object({
+  email: z.string().email("Podaj prawidłowy adres e-mail"),
+  haslo: z.string().min(1, "Hasło jest wymagane"),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
+
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [haslo, setHaslo] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
 
   useEffect(() => {
     if (getToken()) {
@@ -23,21 +38,15 @@ export default function LoginPage() {
     }
   }, [router]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim() || !haslo.trim()) return;
-    setError("");
-    setLoading(true);
+  async function onSubmit(data: LoginForm) {
     try {
-      const data = await authApi.login(email.trim(), haslo);
-      setToken(data.access_token);
+      const res = await authApi.login(data.email, data.haslo);
+      setToken(res.access_token);
       router.replace("/dashboard");
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Nieprawidłowy email lub hasło"
-      );
-    } finally {
-      setLoading(false);
+      setError("root", {
+        message: err instanceof Error ? err.message : "Nieprawidłowy email lub hasło",
+      });
     }
   }
 
@@ -62,43 +71,41 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  Adres e-mail
-                </label>
+                <label className="text-sm font-medium mb-1.5 block">Adres e-mail</label>
                 <Input
                   type="email"
                   placeholder="jan@parafia.pl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
-                  required
+                  {...register("email")}
                 />
+                {errors.email && (
+                  <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+                )}
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  Hasło
-                </label>
+                <label className="text-sm font-medium mb-1.5 block">Hasło</label>
                 <Input
                   type="password"
                   placeholder="••••••••"
-                  value={haslo}
-                  onChange={(e) => setHaslo(e.target.value)}
                   autoComplete="current-password"
-                  required
+                  {...register("haslo")}
                 />
+                {errors.haslo && (
+                  <p className="text-xs text-destructive mt-1">{errors.haslo.message}</p>
+                )}
               </div>
 
-              {error && (
+              {errors.root && (
                 <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
-                  {error}
+                  {errors.root.message}
                 </p>
               )}
 
-              <Button type="submit" className="w-full gap-2" disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {loading ? "Loguję..." : "Zaloguj się"}
+              <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isSubmitting ? "Loguję..." : "Zaloguj się"}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
