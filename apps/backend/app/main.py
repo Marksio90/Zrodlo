@@ -54,7 +54,11 @@ _SEED_HASLO = "Admin1234!"
 
 
 async def _seed_admin() -> None:
-    """Tworzy domyślne konto administratora jeśli baza jest pusta."""
+    """Tworzy domyślne konto administratora jeśli baza jest pusta.
+
+    Bezpieczne przy wielu workerach – łapie IntegrityError gdy inny worker
+    właśnie wstawił tego samego admina.
+    """
     from app.services.auth import hash_password
 
     async with async_session_factory() as session:
@@ -71,8 +75,12 @@ async def _seed_admin() -> None:
             aktywny=True,
         )
         session.add(admin)
-        await session.commit()
-        log.info("seed_admin_created", email=_SEED_EMAIL)
+        try:
+            await session.commit()
+            log.info("seed_admin_created", email=_SEED_EMAIL)
+        except IntegrityError:
+            await session.rollback()
+            log.info("seed_admin_already_exists", email=_SEED_EMAIL)
 
 
 @asynccontextmanager
