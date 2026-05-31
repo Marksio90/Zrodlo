@@ -71,11 +71,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
+      {/* Skip to content – accessible keyboard navigation */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:text-sm focus:font-medium"
+      >
+        Przejdź do treści
+      </a>
       <WelcomeScreen />
       <Sidebar />
       {/* pt-14 on mobile to clear the fixed top bar; md:pt-0 restores desktop */}
       <div className="flex flex-1 flex-col overflow-hidden pt-14 md:pt-0">
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto" tabIndex={-1}>{children}</main>
       </div>
       <PwaInstallBanner />
 

@@ -44,7 +44,7 @@ const nav = [
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
+    <nav aria-label="Nawigacja główna" className="flex-1 space-y-1 p-3 overflow-y-auto">
       {nav.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
         return (
@@ -52,6 +52,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             key={href}
             href={href}
             onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               active
@@ -59,7 +60,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             {label}
           </Link>
         );
@@ -87,7 +88,7 @@ function SidebarFooter({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="border-t p-4 space-y-3 shrink-0">
       {user && (
-        <div className="px-1">
+        <div className="px-1" aria-label={`Zalogowany jako ${user.imie} ${user.nazwisko}`}>
           <p className="text-xs font-medium truncate">
             {user.imie} {user.nazwisko}
           </p>
