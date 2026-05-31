@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -208,7 +208,12 @@ def mock_storage():
 
 @pytest.fixture
 def mock_cache():
-    return MagicMock()
+    cache = MagicMock()
+    cache.get = AsyncMock(return_value=None)
+    cache.set = AsyncMock()
+    cache.delete = AsyncMock()
+    cache.ping = AsyncMock(return_value=True)
+    return cache
 
 
 # ── Fixtures – klienty HTTP ────────────────────────────────────────────────────

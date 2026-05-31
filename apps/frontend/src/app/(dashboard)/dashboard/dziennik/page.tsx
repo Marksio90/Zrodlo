@@ -155,11 +155,17 @@ export default function DziennikPage() {
   if (filtrTyp !== "all") params.typ = filtrTyp;
   if (szukaj.trim()) params.szukaj = szukaj.trim();
 
-  const { data: wpisy = [], isLoading } = useQuery<WpisDziennika[]>({
+  const { data: listPage, isLoading } = useQuery<{
+    items: WpisDziennika[];
+    total: number;
+    page: number;
+    pages: number;
+  }>({
     queryKey: ["dziennik", params],
     queryFn: () => dziennikApi.list(params),
     staleTime: 15_000,
   });
+  const wpisy = listPage?.items ?? [];
 
   // ── Mutations ─────────────────────────────────────────────────────────────────
 
@@ -607,6 +613,9 @@ export default function DziennikPage() {
             Ostatni numer: <strong>L.dz. {statystyki.ostatni_numer}/{ROK}</strong>
             {" · "}
             Łącznie wpisów w {ROK} roku: <strong>{statystyki.lacznie}</strong>
+            {listPage && listPage.pages > 1 && (
+              <span> · Strona <strong>{listPage.page}</strong> z <strong>{listPage.pages}</strong></span>
+            )}
           </p>
         )}
       </div>

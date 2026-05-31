@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "next": "14.2.15",
@@ -29,7 +31,10 @@
     "@radix-ui/react-toast": "^1.2.2",
     "lucide-react": "^0.460.0",
     "date-fns": "^4.1.0",
-    "date-fns-tz": "^3.2.0"
+    "date-fns-tz": "^3.2.0",
+    "zod": "^3.23.8",
+    "react-hook-form": "^7.53.1",
+    "@hookform/resolvers": "^3.9.1"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
@@ -40,6 +45,13 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "eslint": "^9.12.0",
-    "eslint-config-next": "14.2.15"
+    "eslint-config-next": "14.2.15",
+    "vitest": "^2.1.4",
+    "@vitejs/plugin-react": "^4.3.2",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@testing-library/jest-dom": "^6.6.2",
+    "jsdom": "^25.0.1",
+    "vite": "^5.4.10"
   }
 }

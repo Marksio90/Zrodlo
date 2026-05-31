@@ -84,4 +84,13 @@ async def wyslij_powiadomienie(
         referencja_id=referencja_id,
     )
     db.add(p)
+
+    # Wypchnij powiadomienie przez WebSocket (fire-and-forget)
+    import asyncio
+    from app.ws.manager import ws_manager
+    asyncio.ensure_future(ws_manager.broadcast_notification(
+        str(odbiorca_id),
+        {"tytul": tytul, "tresc": tresc, "typ": typ},
+    ))
+
     return p

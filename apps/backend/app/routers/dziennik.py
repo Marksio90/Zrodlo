@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 
 from app.dependencies import CurrentUser, DB
+from app.models.audit import OperacjaAudit
 from app.models.dziennik import StatusWpisu, TypWpisu, WpisDziennika
 from app.models.uzytkownicy import RolaUzytkownika
 from app.schemas.dziennik import (
@@ -17,6 +18,8 @@ from app.schemas.dziennik import (
     WpisDziennikRead,
     WpisDziennikUpdate,
 )
+from app.schemas.pagination import Strona
+from app.services import audit as audit_svc
 
 router = APIRouter(prefix="/dziennik", tags=["Dziennik kancleryjny"])
 
@@ -126,7 +129,7 @@ async def eksport_csv(
 
 # ── CRUD ────────────────────────────────────────────────────────────────────
 
-@router.get("", response_model=list[WpisDziennikRead], summary="Lista wpisów dziennika")
+@router.get("", response_model=Strona[WpisDziennikRead], summary="Lista wpisów dziennika")
 async def lista_wpisow(
     current_user: CurrentUser,
     db: DB,
@@ -140,26 +143,41 @@ async def lista_wpisow(
     parafia_id = _wymagaj_parafie(current_user)
     rok = rok or datetime.now(timezone.utc).year
 
-    q = select(WpisDziennika).where(
+    base_where = [
         WpisDziennika.parafia_id == parafia_id,
         WpisDziennika.rok == rok,
         WpisDziennika.deleted_at.is_(None),
-    )
+    ]
     if typ:
-        q = q.where(WpisDziennika.typ == typ)
+        base_where.append(WpisDziennika.typ == typ)
     if status:
-        q = q.where(WpisDziennika.status == status)
+        base_where.append(WpisDziennika.status == status)
     if szukaj:
         pattern = f"%{szukaj}%"
-        q = q.where(
+        base_where.append(
             WpisDziennika.przedmiot.ilike(pattern)
             | WpisDziennika.nadawca.ilike(pattern)
             | WpisDziennika.odbiorca.ilike(pattern)
             | WpisDziennika.numer_pelny.ilike(pattern)
         )
-    q = q.order_by(WpisDziennika.kolejny_numer.desc()).limit(limit).offset(offset)
-    result = await db.execute(q)
-    return result.scalars().all()
+
+    total_result = await db.execute(
+        select(func.count()).select_from(WpisDziennika).where(*base_where)
+    )
+    total = total_result.scalar_one_or_none() or 0
+
+    items_result = await db.execute(
+        select(WpisDziennika).where(*base_where)
+        .order_by(WpisDziennika.kolejny_numer.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return Strona(
+        items=items_result.scalars().all(),
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post("", response_model=WpisDziennikRead, status_code=201, summary="Nowy wpis w dzienniku")
@@ -190,6 +208,15 @@ async def nowy_wpis(body: WpisDziennikCreate, current_user: CurrentUser, db: DB)
     db.add(wpis)
     await db.flush()
     await db.refresh(wpis)
+    await audit_svc.zapisz(
+        db,
+        tabela="wpisy_dziennika",
+        rekord_id=wpis.id,
+        operacja=OperacjaAudit.UTWORZONO,
+        uzytkownik_id=current_user.id,
+        parafia_id=parafia_id,
+        nowe_wartosci=audit_svc.snapshot(wpis),
+    )
     await db.commit()
     return wpis
 
@@ -217,11 +244,22 @@ async def aktualizuj_wpis(
     if not wpis or wpis.deleted_at or wpis.parafia_id != parafia_id:
         raise HTTPException(status_code=404, detail="Wpis nie znaleziony")
 
+    stare = audit_svc.snapshot(wpis)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(wpis, field, value)
     wpis.updated_at = datetime.now(timezone.utc)
     await db.flush()
     await db.refresh(wpis)
+    await audit_svc.zapisz(
+        db,
+        tabela="wpisy_dziennika",
+        rekord_id=wpis.id,
+        operacja=OperacjaAudit.ZAKTUALIZOWANO,
+        uzytkownik_id=current_user.id,
+        parafia_id=parafia_id,
+        stare_wartosci=stare,
+        nowe_wartosci=audit_svc.snapshot(wpis),
+    )
     await db.commit()
     return wpis
 
@@ -235,4 +273,12 @@ async def usun_wpis(wpis_id: uuid.UUID, current_user: CurrentUser, db: DB):
     if not wpis or wpis.deleted_at or wpis.parafia_id != parafia_id:
         raise HTTPException(status_code=404, detail="Wpis nie znaleziony")
     wpis.deleted_at = datetime.now(timezone.utc)
+    await audit_svc.zapisz(
+        db,
+        tabela="wpisy_dziennika",
+        rekord_id=wpis.id,
+        operacja=OperacjaAudit.USUNIETO,
+        uzytkownik_id=current_user.id,
+        parafia_id=parafia_id,
+    )
     await db.commit()

@@ -54,3 +54,119 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* ── Style druku ─────────────────────────────────────────────────────────────
+   Elementy oznaczone .print-area są drukowane ze wszystkimi szczegółami.
+   Nawigacja, przyciski i sidebar są ukrywane przy druku.
+   Użycie: <div className="print-area"> ... </div>
+          <Button className="print:hidden">Drukuj</Button>
+   lub window.print() z dowolnego miejsca.
+────────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Ukryj elementy UI nie związane z treścią */
+  aside,
+  nav,
+  header,
+  footer,
+  [data-print="hidden"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Resetuj tło i kolory do czarno-białego */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    font-family: "Times New Roman", serif;
+  }
+
+  /* Obszar druku zajmuje całą stronę */
+  .print-area {
+    display: block !important;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Nagłówek dokumentu / intencji */
+  .print-header {
+    text-align: center;
+    margin-bottom: 24pt;
+    border-bottom: 1pt solid black;
+    padding-bottom: 12pt;
+  }
+
+  .print-header h1 {
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 0 0 4pt;
+  }
+
+  .print-header p {
+    font-size: 10pt;
+    margin: 0;
+  }
+
+  /* Tabela intencji / dziennik */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+
+  th, td {
+    border: 0.5pt solid #666;
+    padding: 4pt 6pt;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: #f0f0f0 !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Unikaj łamania wierszy tabeli */
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Stopka z numerem strony */
+  @page {
+    margin: 2cm;
+    size: A4;
+  }
+
+  @page :first {
+    margin-top: 1.5cm;
+  }
+
+  /* Powrót linków do zwykłego tekstu */
+  a {
+    color: black !important;
+    text-decoration: none !important;
+  }
+
+  /* Karty i panele stają się białymi pudełkami */
+  .card,
+  [class*="rounded"],
+  [class*="shadow"] {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Kolory statusów widoczne przy druku */
+  [class*="bg-green"],
+  [class*="bg-blue"],
+  [class*="bg-yellow"],
+  [class*="bg-red"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

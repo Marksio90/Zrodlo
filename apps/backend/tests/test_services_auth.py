@@ -6,7 +6,7 @@ import pytest
 from jose import JWTError, jwt
 
 from app.services.auth import (
-    TOKEN_EXPIRE_HOURS,
+    ACCESS_EXPIRE_MINUTES,
     ALGORITHM,
     create_access_token,
     decode_token,
@@ -62,7 +62,7 @@ class TestJwtTokens:
         exp = datetime.fromtimestamp(decoded["exp"], tz=timezone.utc)
         iat = datetime.fromtimestamp(decoded["iat"], tz=timezone.utc)
         delta = exp - iat
-        assert abs(delta.total_seconds() - TOKEN_EXPIRE_HOURS * 3600) < 5
+        assert abs(delta.total_seconds() - ACCESS_EXPIRE_MINUTES * 60) < 5
 
     def test_tampered_token_raises(self):
         token = create_access_token({"sub": "user"})

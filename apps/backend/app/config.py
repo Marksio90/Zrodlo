@@ -37,6 +37,23 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost", "http://localhost:3000"]
 
+    # SMTP (opcjonalnie – brak = logowanie do konsoli w trybie dev)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = "system@parafia.pl"
+
+    # URL frontendu (do linków w mailach)
+    app_url: str = "http://localhost:3000"
+
+    # Limity uploadu
+    max_upload_mb: int = 10
+
+    # Sentry (opcjonalnie – brak DSN = wyłączone)
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.1
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors(cls, v: str | list[str]) -> list[str]:
@@ -44,6 +61,10 @@ class Settings(BaseSettings):
             import json
             return json.loads(v)
         return v
+
+    @property
+    def refresh_secret(self) -> str:
+        return self.secret_key + "_refresh_v1"
 
     @property
     def is_development(self) -> bool:

@@ -3,10 +3,11 @@ import uuid
 from datetime import datetime, timezone
 
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
+from app.database import async_session_factory
 from app.dependencies import AI, DB, CurrentUser
 from app.models.intencje import Liturgia
 from app.models.kalendarz import Wydarzenie
@@ -81,6 +82,7 @@ async def wyslij_wiadomosc(
     db: DB,
     current_user: CurrentUser,
     ai: AI,
+    bg: BackgroundTasks,
 ):
     rozmowa = await db.get(Rozmowa, rozmowa_id)
     if not rozmowa or rozmowa.uzytkownik_id != current_user.id:
@@ -107,15 +109,24 @@ async def wyslij_wiadomosc(
     try:
         jest_trudne = _czy_trudne(body.tresc)
         odpowiedz, model_uzyty, usage = await ai.chat_tracked(messages, complex=jest_trudne)
-        await zapisz_uzycie(
-            db,
-            model=model_uzyty,
-            typ=TypAiUzycia.CHAT,
-            tokeny_wejscie=usage["prompt_tokens"],
-            tokeny_wyjscie=usage["completion_tokens"],
-            parafia_id=current_user.parafia_id,
-            uzytkownik_id=current_user.id,
-        )
+
+        async def _log_chat():
+            async with async_session_factory() as s:
+                try:
+                    await zapisz_uzycie(
+                        s,
+                        model=model_uzyty,
+                        typ=TypAiUzycia.CHAT,
+                        tokeny_wejscie=usage["prompt_tokens"],
+                        tokeny_wyjscie=usage["completion_tokens"],
+                        parafia_id=current_user.parafia_id,
+                        uzytkownik_id=current_user.id,
+                    )
+                    await s.commit()
+                except Exception:
+                    await s.rollback()
+
+        bg.add_task(_log_chat)
     except Exception as e:
         log.error("asystent_error", error=str(e))
         odpowiedz = "Niestety nie mam tej informacji."

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity } from "lucide-react";
 import { healthApi } from "@/lib/api";
@@ -8,9 +9,10 @@ import { cn } from "@/lib/utils";
 interface HeaderProps {
   title: string;
   description?: string;
+  children?: React.ReactNode;
 }
 
-export function Header({ title, description }: HeaderProps) {
+export function Header({ title, description, children }: HeaderProps) {
   const { data: health } = useQuery({
     queryKey: ["health"],
     queryFn: healthApi.check,
@@ -25,6 +27,7 @@ export function Header({ title, description }: HeaderProps) {
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
 
+      {children && <div className="flex items-center gap-2">{children}</div>}
       <div className="flex items-center gap-2 text-xs">
         <Activity
           className={cn(

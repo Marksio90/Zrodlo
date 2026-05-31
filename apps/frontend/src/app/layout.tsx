@@ -39,7 +39,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pl">
+    <html lang="pl" suppressHydrationWarning>
+      <head>
+        {/* Prevent flash of wrong theme */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('zrodlo_theme');if(t==='dark')document.documentElement.classList.add('dark');})()`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <PwaOfflineBar />
         <Providers>{children}</Providers>

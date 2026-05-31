@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 
 from app.dependencies import CurrentUser, DB
+from app.models.audit import OperacjaAudit
 from app.models.wspolnoty import CzlonekWspolnoty, Wspolnota
 from app.schemas.wspolnoty import CzlonekCreate, CzlonekRead, WspolnotaCreate, WspolnotaRead
+from app.services import audit as audit_svc
 from app.services.permissions import wymagaj_uprawnienia
 
 router = APIRouter(prefix="/wspolnoty", tags=["Wspólnoty"])
@@ -28,6 +30,15 @@ async def create_wspolnota(payload: WspolnotaCreate, db: DB, current_user: Curre
     db.add(obj)
     await db.flush()
     await db.refresh(obj)
+    await audit_svc.zapisz(
+        db,
+        tabela="wspolnoty",
+        rekord_id=obj.id,
+        operacja=OperacjaAudit.UTWORZONO,
+        uzytkownik_id=current_user.id,
+        parafia_id=current_user.parafia_id,
+        nowe_wartosci=audit_svc.snapshot(obj),
+    )
     return WspolnotaRead.model_validate({**obj.__dict__, "liczba_czlonkow": 0})
 
 
@@ -78,6 +89,14 @@ async def get_wspolnota(wspolnota_id: uuid.UUID, db: DB, current_user: CurrentUs
                dependencies=[Depends(wymagaj_uprawnienia("wspolnota", "usun"))])
 async def delete_wspolnota(wspolnota_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await _get_wspolnota_or_404(db, wspolnota_id, current_user)
+    await audit_svc.zapisz(
+        db,
+        tabela="wspolnoty",
+        rekord_id=obj.id,
+        operacja=OperacjaAudit.USUNIETO,
+        uzytkownik_id=current_user.id,
+        parafia_id=current_user.parafia_id,
+    )
     await db.delete(obj)
 
 
@@ -89,6 +108,15 @@ async def add_czlonek(wspolnota_id: uuid.UUID, payload: CzlonekCreate, db: DB, c
     db.add(obj)
     await db.flush()
     await db.refresh(obj)
+    await audit_svc.zapisz(
+        db,
+        tabela="czlonkowie_wspolnot",
+        rekord_id=obj.id,
+        operacja=OperacjaAudit.UTWORZONO,
+        uzytkownik_id=current_user.id,
+        parafia_id=current_user.parafia_id,
+        nowe_wartosci=audit_svc.snapshot(obj),
+    )
     return obj
 
 

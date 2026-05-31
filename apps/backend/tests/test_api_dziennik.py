@@ -64,28 +64,36 @@ class TestListaDziennika:
 
     async def test_pusta_lista(self, client_proboszcz_a):
         client, db = client_proboszcz_a
-        db.queue([])
+        db.queue(0)   # COUNT query
+        db.queue([])  # items query
         resp = await client.get("/dziennik")
         assert resp.status_code == 200
-        assert resp.json() == []
+        body = resp.json()
+        assert body["items"] == []
+        assert body["total"] == 0
+        assert body["page"] == 1
+        assert body["pages"] == 1
 
     async def test_zwraca_wpisy(self, client_proboszcz_a):
         client, db = client_proboszcz_a
         wpis = _make_wpis()
-        db.queue([wpis])
+        db.queue(1)      # COUNT = 1
+        db.queue([wpis]) # items
         resp = await client.get("/dziennik")
         assert resp.status_code == 200
-        data = resp.json()
-        assert len(data) == 1
-        assert data[0]["numer_pelny"] == f"L.dz. 1/{ROK}"
-        assert data[0]["typ"] == "przychodzace"
+        body = resp.json()
+        assert body["total"] == 1
+        assert len(body["items"]) == 1
+        assert body["items"][0]["numer_pelny"] == f"L.dz. 1/{ROK}"
+        assert body["items"][0]["typ"] == "przychodzace"
 
     async def test_wielotenancy(self, client_proboszcz_b):
         client, db = client_proboszcz_b
-        db.queue([])
+        db.queue(0)   # COUNT
+        db.queue([])  # items
         resp = await client.get("/dziennik")
         assert resp.status_code == 200
-        assert resp.json() == []
+        assert resp.json()["items"] == []
 
 
 # ── POST /dziennik ─────────────────────────────────────────────────────────────

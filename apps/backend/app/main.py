@@ -1,11 +1,29 @@
 import structlog
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+
+from app.config import settings as _settings_early
+from app.services.rate_limit import limiter
+
+if _settings_early.sentry_dsn:
+    sentry_sdk.init(
+        dsn=_settings_early.sentry_dsn,
+        integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+        traces_sample_rate=_settings_early.sentry_traces_sample_rate,
+        environment=_settings_early.environment,
+        send_default_pii=False,
+    )
 
 from app.config import settings
 from app.database import async_session_factory, engine
@@ -25,6 +43,8 @@ from app.routers import (
     onboarding as onboarding_router,
     ai_koszty as ai_koszty_router,
     dziennik as dziennik_router,
+    zaproszenia as zaproszenia_router,
+    ws as ws_router,
 )
 
 log = structlog.get_logger()
@@ -85,6 +105,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
@@ -120,3 +143,5 @@ app.include_router(subskrypcja_router.router)
 app.include_router(onboarding_router.router)
 app.include_router(ai_koszty_router.router)
 app.include_router(dziennik_router.router)
+app.include_router(zaproszenia_router.router)
+app.include_router(ws_router.router)
