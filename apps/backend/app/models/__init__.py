@@ -15,6 +15,7 @@ from app.models.skan import SkanDokumentu
 from app.models.rodo import AkceptacjaUmowy
 from app.models.subskrypcja import Subskrypcja
 from app.models.ai_uzycie import AiUzycie
+from app.models.dziennik import WpisDziennika
 
 __all__ = [
     "Base",
@@ -34,4 +35,5 @@ __all__ = [
     "AkceptacjaUmowy",
     "Subskrypcja",
     "AiUzycie",
+    "WpisDziennika",
 ]

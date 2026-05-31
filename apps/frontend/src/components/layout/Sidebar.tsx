@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Archive,
   BookOpen,
+  BookMarked,
   Brain,
   CalendarDays,
   FileText,
@@ -25,6 +26,7 @@ const nav = [
   { href: "/dashboard/intencje", label: "Intencje", icon: Heart },
   { href: "/dashboard/dokumenty", label: "Dokumenty", icon: FileText },
   { href: "/dashboard/archiwum", label: "Archiwum OCR", icon: Archive },
+  { href: "/dashboard/dziennik", label: "Dziennik", icon: BookMarked },
   { href: "/dashboard/wspolnoty", label: "Wspólnoty", icon: Users },
   { href: "/dashboard/kalendarz", label: "Kalendarz", icon: CalendarDays },
   { href: "/dashboard/ogloszenia", label: "Ogłoszenia", icon: Newspaper },

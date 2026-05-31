@@ -217,6 +217,23 @@ export const onboardingApi = {
   status: () => apiClient.get("/onboarding/status").then((r) => r.data),
 };
 
+// --- Dziennik kancleryjny ---
+export const dziennikApi = {
+  list: (params?: Record<string, unknown>) =>
+    apiClient.get("/dziennik", { params }).then((r) => r.data),
+  create: (data: unknown) => apiClient.post("/dziennik", data).then((r) => r.data),
+  get: (id: string) => apiClient.get(`/dziennik/${id}`).then((r) => r.data),
+  update: (id: string, data: unknown) =>
+    apiClient.patch(`/dziennik/${id}`, data).then((r) => r.data),
+  delete: (id: string) => apiClient.delete(`/dziennik/${id}`),
+  statystyki: () => apiClient.get("/dziennik/statystyki").then((r) => r.data),
+  exportCsv: (rok?: number) =>
+    apiClient.get("/dziennik/export/csv", {
+      params: rok ? { rok } : {},
+      responseType: "blob",
+    }).then((r) => r.data),
+};
+
 // --- AI Koszty ---
 export const aiKosztyApi = {
   podsumowanie: () => apiClient.get("/ai/koszty/podsumowanie").then((r) => r.data),
