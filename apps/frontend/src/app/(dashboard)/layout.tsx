@@ -56,7 +56,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen overflow-hidden bg-muted/30">
       <WelcomeScreen />
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      {/* pt-14 on mobile to clear the fixed top bar; md:pt-0 restores desktop */}
+      <div className="flex flex-1 flex-col overflow-hidden pt-14 md:pt-0">
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
       <PwaInstallBanner />
