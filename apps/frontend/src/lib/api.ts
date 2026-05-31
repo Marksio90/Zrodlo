@@ -195,3 +195,24 @@ export const demoApi = {
 export const healthApi = {
   check: () => apiClient.get("/health").then((r) => r.data),
 };
+
+// --- RODO ---
+export const rodoApi = {
+  umowa: () => apiClient.get("/rodo/umowa").then((r) => r.data),
+  status: () => apiClient.get("/rodo/status").then((r) => r.data),
+  akceptuj: (wersja = "1.0") =>
+    apiClient.post("/rodo/akceptuj", { wersja }).then((r) => r.data),
+  historia: () => apiClient.get("/rodo/historia").then((r) => r.data),
+};
+
+// --- Subskrypcja ---
+export const subskrypcjaApi = {
+  plany: () => apiClient.get("/subskrypcja/plany").then((r) => r.data),
+  status: () => apiClient.get("/subskrypcja/status").then((r) => r.data),
+  trial: () => apiClient.post("/subskrypcja/trial", {}).then((r) => r.data),
+};
+
+// --- Onboarding ---
+export const onboardingApi = {
+  status: () => apiClient.get("/onboarding/status").then((r) => r.data),
+};
