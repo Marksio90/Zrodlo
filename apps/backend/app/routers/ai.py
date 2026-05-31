@@ -1,10 +1,38 @@
+import uuid
+
 from pydantic import BaseModel, Field
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
+from app.database import async_session_factory
 from app.dependencies import AI, CurrentUser, DB
 from app.models.ai_uzycie import TypAiUzycia
 from app.services.ai_koszt import zapisz_uzycie
+
+
+async def _bg_zapisz_uzycie(
+    model: str,
+    typ: TypAiUzycia,
+    tokeny_wejscie: int,
+    tokeny_wyjscie: int,
+    parafia_id: uuid.UUID | None,
+    uzytkownik_id: uuid.UUID | None,
+) -> None:
+    """Zapisuje zużycie AI w tle z własną sesją DB."""
+    async with async_session_factory() as session:
+        try:
+            await zapisz_uzycie(
+                session,
+                model=model,
+                typ=typ,
+                tokeny_wejscie=tokeny_wejscie,
+                tokeny_wyjscie=tokeny_wyjscie,
+                parafia_id=parafia_id,
+                uzytkownik_id=uzytkownik_id,
+            )
+            await session.commit()
+        except Exception:
+            await session.rollback()
 
 router = APIRouter(prefix="/ai", tags=["AI – Wsparcie duszpasterskie"])
 
@@ -40,7 +68,7 @@ ZASTRZEZENIE = (
 
 
 @router.post("/homilia", response_model=HomiliaResponse)
-async def wsparcie_homilii(req: HomiliaRequest, ai: AI, db: DB, current_user: CurrentUser):
+async def wsparcie_homilii(req: HomiliaRequest, ai: AI, db: DB, current_user: CurrentUser, bg: BackgroundTasks):
     czytania_tekst = "\n\n".join(
         f"Czytanie {i + 1}:\n{c}" for i, c in enumerate(req.czytania)
     )
@@ -61,23 +89,23 @@ Pamiętaj: to są propozycje do przemyślenia przez kapłana, nie gotowy tekst d
 
     try:
         sugestia, model_uzyty, usage = await ai.generate_tracked(prompt)
-        await zapisz_uzycie(
-            db,
-            model=model_uzyty,
-            typ=TypAiUzycia.HOMILIA,
-            tokeny_wejscie=usage["prompt_tokens"],
-            tokeny_wyjscie=usage["completion_tokens"],
-            parafia_id=current_user.parafia_id,
-            uzytkownik_id=current_user.id,
-        )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Serwis AI niedostępny: {e}")
 
+    bg.add_task(
+        _bg_zapisz_uzycie,
+        model=model_uzyty,
+        typ=TypAiUzycia.HOMILIA,
+        tokeny_wejscie=usage["prompt_tokens"],
+        tokeny_wyjscie=usage["completion_tokens"],
+        parafia_id=current_user.parafia_id,
+        uzytkownik_id=current_user.id,
+    )
     return HomiliaResponse(sugestia=sugestia, model=model_uzyty, zastrzezenie=ZASTRZEZENIE)
 
 
 @router.post("/dokument", response_model=DokumentResponse)
-async def generuj_dokument(req: DokumentRequest, ai: AI, db: DB, current_user: CurrentUser):
+async def generuj_dokument(req: DokumentRequest, ai: AI, db: DB, current_user: CurrentUser, bg: BackgroundTasks):
     dane_str = "\n".join(f"- {k}: {v}" for k, v in req.dane.items())
     prompt = f"""Zredaguj treść dokumentu typu: {req.typ}
 
@@ -91,18 +119,18 @@ Jeśli brakuje kluczowych danych, wskaż to wyraźnie w tekście."""
 
     try:
         tresc, model_uzyty, usage = await ai.generate_tracked(prompt)
-        await zapisz_uzycie(
-            db,
-            model=model_uzyty,
-            typ=TypAiUzycia.DOKUMENT,
-            tokeny_wejscie=usage["prompt_tokens"],
-            tokeny_wyjscie=usage["completion_tokens"],
-            parafia_id=current_user.parafia_id,
-            uzytkownik_id=current_user.id,
-        )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Serwis AI niedostępny: {e}")
 
+    bg.add_task(
+        _bg_zapisz_uzycie,
+        model=model_uzyty,
+        typ=TypAiUzycia.DOKUMENT,
+        tokeny_wejscie=usage["prompt_tokens"],
+        tokeny_wyjscie=usage["completion_tokens"],
+        parafia_id=current_user.parafia_id,
+        uzytkownik_id=current_user.id,
+    )
     return DokumentResponse(tresc=tresc, model=model_uzyty, zastrzezenie=ZASTRZEZENIE)
 
 
