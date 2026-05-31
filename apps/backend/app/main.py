@@ -1,16 +1,29 @@
 import structlog
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.config import settings as _settings_early
 from app.services.rate_limit import limiter
+
+if _settings_early.sentry_dsn:
+    sentry_sdk.init(
+        dsn=_settings_early.sentry_dsn,
+        integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+        traces_sample_rate=_settings_early.sentry_traces_sample_rate,
+        environment=_settings_early.environment,
+        send_default_pii=False,
+    )
 
 from app.config import settings
 from app.database import async_session_factory, engine

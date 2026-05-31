@@ -28,6 +28,7 @@ dependencies = [
     "pymupdf>=1.24.0",
     "email-validator>=2.0.0",
     "slowapi>=0.1.9",
+    "sentry-sdk[fastapi]>=2.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]

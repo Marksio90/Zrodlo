@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # URL frontendu (do linków w mailach)
     app_url: str = "http://localhost:3000"
 
+    # Sentry (opcjonalnie – brak DSN = wyłączone)
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.1
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors(cls, v: str | list[str]) -> list[str]:
