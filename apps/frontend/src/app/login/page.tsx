@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,12 @@ export default function LoginPage() {
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loading ? "Loguję..." : "Zaloguj się"}
               </Button>
+
+              <p className="text-center text-sm text-muted-foreground">
+                <Link href="/reset-hasla" className="text-primary hover:underline">
+                  Nie pamiętam hasła
+                </Link>
+              </p>
             </form>
           </CardContent>
         </Card>

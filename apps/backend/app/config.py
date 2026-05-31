@@ -37,6 +37,16 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost", "http://localhost:3000"]
 
+    # SMTP (opcjonalnie – brak = logowanie do konsoli w trybie dev)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = "system@parafia.pl"
+
+    # URL frontendu (do linków w mailach)
+    app_url: str = "http://localhost:3000"
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors(cls, v: str | list[str]) -> list[str]:

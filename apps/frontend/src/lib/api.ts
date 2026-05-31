@@ -85,6 +85,10 @@ export const authApi = {
   mnie: () => apiClient.get("/auth/mnie").then((r) => r.data),
   refresh: () => apiClient.post("/auth/refresh").then((r) => r.data),
   logout: () => apiClient.post("/auth/logout"),
+  resetWyslij: (email: string) =>
+    apiClient.post("/auth/reset-hasla/wyslij", { email }),
+  resetZmien: (token: string, nowe_haslo: string) =>
+    apiClient.post("/auth/reset-hasla/zmien", { token, nowe_haslo }),
 };
 
 // --- Intencje ---

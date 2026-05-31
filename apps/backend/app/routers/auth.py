@@ -1,10 +1,11 @@
-"""Autoryzacja – rejestracja, logowanie, odświeżanie sesji."""
+"""Autoryzacja – rejestracja, logowanie, odświeżanie sesji, reset hasła."""
 
 import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from jose import JWTError
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 
 from app.config import settings
@@ -20,6 +21,18 @@ from app.services.auth import (
     hash_password,
     verify_password,
 )
+from app.services.email import send_reset_email
+
+_RESET_TTL = 3600  # 1 hour
+
+
+class _ResetWyslij(BaseModel):
+    email: EmailStr
+
+
+class _ResetZmien(BaseModel):
+    token: str
+    nowe_haslo: str = Field(..., min_length=8, max_length=200)
 
 router = APIRouter(prefix="/auth", tags=["Autoryzacja"])
 
@@ -161,6 +174,43 @@ async def logout(request: Request, response: Response, cache: Cache):
             pass  # Token invalid/expired – still clear the cookie
 
     response.delete_cookie("refresh_token", path=_REFRESH_PATH)
+
+
+@router.post("/reset-hasla/wyslij", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_hasla_wyslij(payload: _ResetWyslij, db: DB, cache: Cache):
+    """Wyślij e-mail z linkiem do resetu hasła (zawsze 204 – nie ujawnia czy email istnieje)."""
+    result = await db.execute(
+        select(Uzytkownik).where(
+            Uzytkownik.email == payload.email,
+            Uzytkownik.deleted_at.is_(None),
+            Uzytkownik.aktywny.is_(True),
+        )
+    )
+    user: Uzytkownik | None = result.scalar_one_or_none()
+    if user:
+        token = str(uuid.uuid4())
+        await cache.set(f"pwreset:{token}", str(user.id), ttl=_RESET_TTL)
+        await send_reset_email(user.email, token)
+
+
+@router.post("/reset-hasla/zmien", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_hasla_zmien(payload: _ResetZmien, db: DB, cache: Cache):
+    """Ustaw nowe hasło na podstawie jednorazowego tokenu z e-maila."""
+    user_id_str = await cache.get(f"pwreset:{payload.token}")
+    if not user_id_str:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token jest niepoprawny lub wygasł",
+        )
+
+    user: Uzytkownik | None = await db.get(Uzytkownik, uuid.UUID(user_id_str))
+    if not user or not user.aktywny or user.deleted_at is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Konto nieaktywne")
+
+    user.haslo_hash = hash_password(payload.nowe_haslo)
+    user.updated_at = datetime.now(timezone.utc)
+    await cache.delete(f"pwreset:{payload.token}")
+    await db.flush()
 
 
 @router.post("/rejestracja", response_model=UzytkownikRead, status_code=status.HTTP_201_CREATED)
