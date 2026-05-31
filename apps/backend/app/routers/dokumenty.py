@@ -14,12 +14,18 @@ from app.services.permissions import wymagaj_uprawnienia
 router = APIRouter(prefix="/dokumenty", tags=["Dokumenty"])
 
 
+def _or_404_tenant(obj, current_user, detail: str):
+    if not obj or obj.deleted_at is not None:
+        raise HTTPException(status_code=404, detail=detail)
+    if obj.parafia_id and current_user.parafia_id and obj.parafia_id != current_user.parafia_id:
+        raise HTTPException(status_code=404, detail=detail)
+
+
 @router.post("", response_model=DokumentRead, status_code=status.HTTP_201_CREATED,
              dependencies=[Depends(wymagaj_uprawnienia("dokument", "tworz"))])
 async def create_dokument(payload: DokumentCreate, db: DB, current_user: CurrentUser):
     obj = Dokument(**payload.model_dump(), tworca_id=current_user.id)
-    if not obj.parafia_id:
-        obj.parafia_id = current_user.parafia_id
+    obj.parafia_id = current_user.parafia_id
     db.add(obj)
     await db.flush()
     await db.refresh(obj)
@@ -33,13 +39,16 @@ async def create_dokument(payload: DokumentCreate, db: DB, current_user: Current
 
 @router.get("", response_model=list[DokumentRead])
 async def list_dokumenty(
-    db: DB, _: CurrentUser,
+    db: DB, current_user: CurrentUser,
     typ: TypDokumentu | None = Query(None),
     status_filter: StatusDokumentu | None = Query(None, alias="status"),
     limit: int = Query(50, le=200),
     offset: int = Query(0),
 ):
-    q = select(Dokument).where(Dokument.deleted_at.is_(None))
+    q = select(Dokument).where(
+        Dokument.deleted_at.is_(None),
+        Dokument.parafia_id == current_user.parafia_id,
+    )
     if typ:
         q = q.where(Dokument.typ == typ)
     if status_filter:
@@ -49,10 +58,9 @@ async def list_dokumenty(
 
 
 @router.get("/{dokument_id}", response_model=DokumentRead)
-async def get_dokument(dokument_id: uuid.UUID, db: DB, _: CurrentUser):
+async def get_dokument(dokument_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Dokument, dokument_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    _or_404_tenant(obj, current_user, "Dokument nie znaleziony")
     return obj
 
 
@@ -60,8 +68,7 @@ async def get_dokument(dokument_id: uuid.UUID, db: DB, _: CurrentUser):
               dependencies=[Depends(wymagaj_uprawnienia("dokument", "edytuj"))])
 async def update_dokument(dokument_id: uuid.UUID, payload: DokumentUpdate, db: DB, current_user: CurrentUser):
     obj = await db.get(Dokument, dokument_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    _or_404_tenant(obj, current_user, "Dokument nie znaleziony")
     stare = audit_svc.snapshot(obj)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(obj, field, value)
@@ -79,8 +86,7 @@ async def update_dokument(dokument_id: uuid.UUID, payload: DokumentUpdate, db: D
              dependencies=[Depends(wymagaj_uprawnienia("dokument", "zatwierdz"))])
 async def zatwierdz_dokument(dokument_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Dokument, dokument_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    _or_404_tenant(obj, current_user, "Dokument nie znaleziony")
     stare = audit_svc.snapshot(obj)
     obj.status = StatusDokumentu.ZATWIERDZONY
     obj.zatwierdzone_przez_id = current_user.id
@@ -100,8 +106,7 @@ async def zatwierdz_dokument(dokument_id: uuid.UUID, db: DB, current_user: Curre
                dependencies=[Depends(wymagaj_uprawnienia("dokument", "usun"))])
 async def soft_delete_dokument(dokument_id: uuid.UUID, db: DB, current_user: CurrentUser, storage: Storage):
     obj = await db.get(Dokument, dokument_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    _or_404_tenant(obj, current_user, "Dokument nie znaleziony")
     stare = audit_svc.snapshot(obj)
     if obj.plik_klucz:
         storage.delete(obj.plik_klucz)
@@ -115,10 +120,9 @@ async def soft_delete_dokument(dokument_id: uuid.UUID, db: DB, current_user: Cur
 
 
 @router.get("/{dokument_id}/pobierz")
-async def download_url(dokument_id: uuid.UUID, db: DB, _: CurrentUser, storage: Storage):
+async def download_url(dokument_id: uuid.UUID, db: DB, current_user: CurrentUser, storage: Storage):
     obj = await db.get(Dokument, dokument_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    _or_404_tenant(obj, current_user, "Dokument nie znaleziony")
     if not obj.plik_klucz:
         raise HTTPException(status_code=404, detail="Brak pliku dołączonego do dokumentu")
     url = storage.presigned_url(obj.plik_klucz, expires_seconds=1800)

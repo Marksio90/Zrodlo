@@ -78,6 +78,65 @@ class OpenAIService:
         )
         return response.data[0].embedding
 
+    # ── Metody ze zwracanym usage (do monitorowania kosztów) ──────────────────
+
+    async def generate_tracked(
+        self, prompt: str, system: str = SYSTEM_PROMPT_DUSZPASTERSKI
+    ) -> tuple[str, str, dict]:
+        """Jak generate(), zwraca też (model, usage_dict)."""
+        model = self._model_zlozony if _czy_trudne(prompt) else self._model_prosty
+        response = await self._client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=1500,
+        )
+        usage = response.usage
+        return (
+            response.choices[0].message.content or "",
+            model,
+            {
+                "prompt_tokens": usage.prompt_tokens if usage else 0,
+                "completion_tokens": usage.completion_tokens if usage else 0,
+            },
+        )
+
+    async def chat_tracked(
+        self, messages: list[dict], complex: bool = False
+    ) -> tuple[str, str, dict]:
+        """Jak chat(), zwraca też usage_dict."""
+        model = self._model_zlozony if complex else self._model_prosty
+        response = await self._client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.2,
+            max_tokens=1000,
+        )
+        usage = response.usage
+        return (
+            response.choices[0].message.content or "Niestety nie mam tej informacji.",
+            model,
+            {
+                "prompt_tokens": usage.prompt_tokens if usage else 0,
+                "completion_tokens": usage.completion_tokens if usage else 0,
+            },
+        )
+
+    async def embed_tracked(self, text: str) -> tuple[list[float], dict]:
+        """Jak embed(), zwraca też usage_dict."""
+        response = await self._client.embeddings.create(
+            model=self._model_embedding,
+            input=text[:8000],
+        )
+        usage = response.usage
+        return (
+            response.data[0].embedding,
+            {"prompt_tokens": usage.total_tokens if usage else 0, "completion_tokens": 0},
+        )
+
     async def is_available(self) -> bool:
         try:
             await self._client.models.list()

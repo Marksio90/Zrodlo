@@ -12,6 +12,10 @@ from app.models.powiadomienia import Powiadomienie
 from app.models.wiedza import NotatkaWiedzy
 from app.models.rozmowa import Rozmowa, WiadomoscRozmowy
 from app.models.skan import SkanDokumentu
+from app.models.rodo import AkceptacjaUmowy
+from app.models.subskrypcja import Subskrypcja
+from app.models.ai_uzycie import AiUzycie
+from app.models.dziennik import WpisDziennika
 
 __all__ = [
     "Base",
@@ -28,4 +32,8 @@ __all__ = [
     "NotatkaWiedzy",
     "Rozmowa", "WiadomoscRozmowy",
     "SkanDokumentu",
+    "AkceptacjaUmowy",
+    "Subskrypcja",
+    "AiUzycie",
+    "WpisDziennika",
 ]

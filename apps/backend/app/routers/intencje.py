@@ -17,6 +17,13 @@ from app.services.permissions import wymagaj_uprawnienia
 router = APIRouter(prefix="/intencje", tags=["Intencje"])
 
 
+def _or_404_tenant(obj, current_user, detail: str):
+    if not obj or obj.deleted_at is not None:
+        raise HTTPException(status_code=404, detail=detail)
+    if obj.parafia_id and current_user.parafia_id and obj.parafia_id != current_user.parafia_id:
+        raise HTTPException(status_code=404, detail=detail)
+
+
 # ── Liturgie ─────────────────────────────────────────────
 
 @router.post("/liturgie", response_model=LiturgiaRead, status_code=status.HTTP_201_CREATED,
@@ -37,13 +44,16 @@ async def create_liturgia(payload: LiturgiaCreate, db: DB, current_user: Current
 
 @router.get("/liturgie", response_model=list[LiturgiaRead])
 async def list_liturgie(
-    db: DB, _: CurrentUser,
+    db: DB, current_user: CurrentUser,
     od: date | None = Query(None),
     do: date | None = Query(None),
     limit: int = Query(50, le=200),
     offset: int = Query(0),
 ):
-    q = select(Liturgia).where(Liturgia.deleted_at.is_(None))
+    q = select(Liturgia).where(
+        Liturgia.deleted_at.is_(None),
+        Liturgia.parafia_id == current_user.parafia_id,
+    )
     if od:
         q = q.where(Liturgia.data >= od)
     if do:
@@ -53,10 +63,9 @@ async def list_liturgie(
 
 
 @router.get("/liturgie/{liturgia_id}", response_model=LiturgiaRead)
-async def get_liturgia(liturgia_id: uuid.UUID, db: DB, _: CurrentUser):
+async def get_liturgia(liturgia_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Liturgia, liturgia_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Liturgia nie znaleziona")
+    _or_404_tenant(obj, current_user, "Liturgia nie znaleziona")
     return obj
 
 
@@ -84,13 +93,16 @@ async def create_intencja(payload: IntencjaCreate, db: DB, current_user: Current
 
 @router.get("", response_model=list[IntencjaRead])
 async def list_intencje(
-    db: DB, _: CurrentUser,
+    db: DB, current_user: CurrentUser,
     liturgia_id: uuid.UUID | None = Query(None),
     potwierdzona: bool | None = Query(None),
     limit: int = Query(50, le=200),
     offset: int = Query(0),
 ):
-    q = select(Intencja).where(Intencja.deleted_at.is_(None))
+    q = select(Intencja).where(
+        Intencja.deleted_at.is_(None),
+        Intencja.parafia_id == current_user.parafia_id,
+    )
     if liturgia_id:
         q = q.where(Intencja.liturgia_id == liturgia_id)
     if potwierdzona is not None:
@@ -100,10 +112,9 @@ async def list_intencje(
 
 
 @router.get("/{intencja_id}", response_model=IntencjaRead)
-async def get_intencja(intencja_id: uuid.UUID, db: DB, _: CurrentUser):
+async def get_intencja(intencja_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Intencja, intencja_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Intencja nie znaleziona")
+    _or_404_tenant(obj, current_user, "Intencja nie znaleziona")
     return obj
 
 
@@ -111,8 +122,7 @@ async def get_intencja(intencja_id: uuid.UUID, db: DB, _: CurrentUser):
               dependencies=[Depends(wymagaj_uprawnienia("intencja", "edytuj"))])
 async def update_intencja(intencja_id: uuid.UUID, payload: IntencjaUpdate, db: DB, current_user: CurrentUser):
     obj = await db.get(Intencja, intencja_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Intencja nie znaleziona")
+    _or_404_tenant(obj, current_user, "Intencja nie znaleziona")
     stare = audit_svc.snapshot(obj)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(obj, field, value)
@@ -130,8 +140,7 @@ async def update_intencja(intencja_id: uuid.UUID, payload: IntencjaUpdate, db: D
              dependencies=[Depends(wymagaj_uprawnienia("intencja", "zatwierdz"))])
 async def potwierdz_intencje(intencja_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Intencja, intencja_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Intencja nie znaleziona")
+    _or_404_tenant(obj, current_user, "Intencja nie znaleziona")
     stare = audit_svc.snapshot(obj)
     obj.potwierdzona = True
     obj.potwierdzone_przez_id = current_user.id
@@ -150,8 +159,7 @@ async def potwierdz_intencje(intencja_id: uuid.UUID, db: DB, current_user: Curre
                dependencies=[Depends(wymagaj_uprawnienia("intencja", "usun"))])
 async def soft_delete_intencja(intencja_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(Intencja, intencja_id)
-    if not obj or obj.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Intencja nie znaleziona")
+    _or_404_tenant(obj, current_user, "Intencja nie znaleziona")
     stare = audit_svc.snapshot(obj)
     obj.deleted_at = datetime.now(timezone.utc)
     await db.flush()

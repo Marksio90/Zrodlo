@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -9,8 +9,12 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 class Wspolnota(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "wspolnoty"
+    __table_args__ = (UniqueConstraint("parafia_id", "nazwa", name="uq_wspolnoty_parafia_nazwa"),)
 
-    nazwa: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    parafia_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parafie.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    nazwa: Mapped[str] = mapped_column(String(200), nullable=False)
     opis: Mapped[str | None] = mapped_column(Text, nullable=True)
     opiekun: Mapped[str | None] = mapped_column(String(200), nullable=True)
     kontakt_email: Mapped[str | None] = mapped_column(String(200), nullable=True)

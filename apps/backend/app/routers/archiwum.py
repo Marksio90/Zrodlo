@@ -10,6 +10,7 @@ from sqlalchemy import or_, select
 
 from app.dependencies import AI, DB, CurrentUser, Storage
 from app.models.skan import SkanDokumentu
+from app.models.uzytkownicy import RolaUzytkownika
 from app.schemas.archiwum import SkanListItem, SkanRead, SkanUpdate
 from app.services import ocr as ocr_svc
 
@@ -71,6 +72,7 @@ async def upload_dokument(
     # Rekord DB – status "przetwarzanie"
     skan = SkanDokumentu(
         id=skan_id,
+        parafia_id=current_user.parafia_id,
         uzytkownik_id=current_user.id,
         nazwa_pliku=plik.filename or "dokument",
         typ_pliku=typ_pliku,
@@ -125,9 +127,18 @@ async def lista_skanow(
     limit: int = Query(30, le=100),
     offset: int = Query(0, ge=0),
 ):
+    # Proboszcz/admin widzi wszystkie skany parafii, pozostali tylko swoje
+    _widzi_wszystkie = current_user.rola in (
+        RolaUzytkownika.PROBOSZCZ, RolaUzytkownika.ADMIN
+    )
+    if _widzi_wszystkie and current_user.parafia_id:
+        _scope = SkanDokumentu.parafia_id == current_user.parafia_id
+    else:
+        _scope = SkanDokumentu.uzytkownik_id == current_user.id
+
     query = select(SkanDokumentu).where(
         SkanDokumentu.deleted_at.is_(None),
-        SkanDokumentu.uzytkownik_id == current_user.id,
+        _scope,
         SkanDokumentu.zarchiwizowany == zarchiwizowany,
     )
     if q:
@@ -155,7 +166,7 @@ async def lista_skanow(
 
 @router.get("/{skan_id}", response_model=SkanRead)
 async def pobierz_skan(skan_id: uuid.UUID, db: DB, current_user: CurrentUser):
-    skan = await _get_or_404(db, skan_id, current_user.id)
+    skan = await _get_or_404(db, skan_id, current_user)
     return skan
 
 
@@ -170,7 +181,7 @@ async def aktualizuj_skan(
     db: DB,
     current_user: CurrentUser,
 ):
-    skan = await _get_or_404(db, skan_id, current_user.id)
+    skan = await _get_or_404(db, skan_id, current_user)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(skan, field, value)
     await db.commit()
@@ -184,7 +195,7 @@ async def aktualizuj_skan(
 
 @router.post("/{skan_id}/archiwizuj", response_model=SkanRead)
 async def archiwizuj(skan_id: uuid.UUID, db: DB, current_user: CurrentUser):
-    skan = await _get_or_404(db, skan_id, current_user.id)
+    skan = await _get_or_404(db, skan_id, current_user)
     skan.zarchiwizowany = not skan.zarchiwizowany
     await db.commit()
     await db.refresh(skan)
@@ -203,7 +214,7 @@ async def ponow_ocr(
     ai: AI,
     storage: Storage,
 ):
-    skan = await _get_or_404(db, skan_id, current_user.id)
+    skan = await _get_or_404(db, skan_id, current_user)
     try:
         content = storage.download(skan.minio_klucz)
     except Exception as e:
@@ -242,7 +253,7 @@ async def ponow_ocr(
 
 @router.get("/{skan_id}/pobierz")
 async def url_pobierania(skan_id: uuid.UUID, db: DB, current_user: CurrentUser, storage: Storage):
-    skan = await _get_or_404(db, skan_id, current_user.id)
+    skan = await _get_or_404(db, skan_id, current_user)
     url = storage.presigned_url(skan.minio_klucz, expires_seconds=1800)
     return {"url": url, "expires_in": 1800, "nazwa_pliku": skan.nazwa_pliku}
 
@@ -253,7 +264,7 @@ async def url_pobierania(skan_id: uuid.UUID, db: DB, current_user: CurrentUser, 
 
 @router.delete("/{skan_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def usun_skan(skan_id: uuid.UUID, db: DB, current_user: CurrentUser, storage: Storage):
-    skan = await _get_or_404(db, skan_id, current_user.id)
+    skan = await _get_or_404(db, skan_id, current_user)
     try:
         storage.delete(skan.minio_klucz)
     except Exception:
@@ -266,8 +277,15 @@ async def usun_skan(skan_id: uuid.UUID, db: DB, current_user: CurrentUser, stora
 # Helper
 # ---------------------------------------------------------------------------
 
-async def _get_or_404(db, skan_id: uuid.UUID, uzytkownik_id: uuid.UUID) -> SkanDokumentu:
+async def _get_or_404(db, skan_id: uuid.UUID, current_user) -> SkanDokumentu:
     skan = await db.get(SkanDokumentu, skan_id)
-    if not skan or skan.deleted_at is not None or skan.uzytkownik_id != uzytkownik_id:
+    if not skan or skan.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    widzi_wszystkie = current_user.rola in (RolaUzytkownika.PROBOSZCZ, RolaUzytkownika.ADMIN)
+    if widzi_wszystkie:
+        if skan.parafia_id and current_user.parafia_id and skan.parafia_id != current_user.parafia_id:
+            raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    else:
+        if skan.uzytkownik_id != current_user.id:
+            raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
     return skan

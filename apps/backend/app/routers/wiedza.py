@@ -52,6 +52,7 @@ async def _embed_i_zapisz(obj: NotatkaWiedzy, ai) -> str | None:
                 vector=vector,
                 payload={
                     "notatka_id": str(obj.id),
+                    "parafia_id": str(obj.parafia_id) if obj.parafia_id else None,
                     "tytul": obj.tytul,
                     "tresc": obj.tresc[:500],
                     "typ": "wiedza",
@@ -107,18 +108,31 @@ class SzukajResponse(BaseModel):
 async def szukaj_semantycznie(body: SzukajRequest, db: DB, current_user: CurrentUser, ai: AI):
     """Semantyczne wyszukiwanie w bazie wiedzy parafii z odpowiedzią AI."""
     wyniki: list[WynikSzukania] = []
+    parafia_id_str = str(current_user.parafia_id) if current_user.parafia_id else None
 
-    # 1. Qdrant – wyszukiwanie semantyczne
+    # 1. Qdrant – wyszukiwanie semantyczne z filtrem po parafii
     try:
         from qdrant_client import QdrantClient
+        from qdrant_client.models import FieldCondition, Filter, MatchValue
 
         embedding = await ai.embed(body.pytanie)
         qc = QdrantClient(url=settings.qdrant_url, timeout=5)
+
+        qdrant_filter = None
+        if parafia_id_str:
+            qdrant_filter = Filter(
+                must=[
+                    FieldCondition(key="parafia_id", match=MatchValue(value=parafia_id_str)),
+                    FieldCondition(key="typ", match=MatchValue(value="wiedza")),
+                ]
+            )
+
         hits = qc.search(
             collection_name=settings.qdrant_collection,
             query_vector=embedding,
             limit=body.limit + 2,
             score_threshold=0.45,
+            query_filter=qdrant_filter,
         )
         ids_znalezione: set[str] = set()
         for hit in hits:
@@ -144,6 +158,7 @@ async def szukaj_semantycznie(body: SzukajRequest, db: DB, current_user: Current
             pattern = f"%{body.pytanie[:60]}%"
             q_filter = [
                 NotatkaWiedzy.deleted_at.is_(None),
+                NotatkaWiedzy.parafia_id == current_user.parafia_id,
                 or_(
                     NotatkaWiedzy.tytul.ilike(pattern),
                     NotatkaWiedzy.tresc.ilike(pattern),
@@ -201,6 +216,7 @@ async def embed_wszystkie(db: DB, current_user: CurrentUser, ai: AI):
     rows = (await db.execute(
         select(NotatkaWiedzy).where(
             NotatkaWiedzy.deleted_at.is_(None),
+            NotatkaWiedzy.parafia_id == current_user.parafia_id,
             NotatkaWiedzy.qdrant_id.is_(None),
         )
     )).scalars().all()
@@ -225,8 +241,7 @@ async def embed_wszystkie(db: DB, current_user: CurrentUser, ai: AI):
              dependencies=[Depends(wymagaj_uprawnienia("wiedza", "tworz"))])
 async def create_notatka(payload: NotatkaWiedzyCreate, db: DB, current_user: CurrentUser, ai: AI):
     obj = NotatkaWiedzy(**payload.model_dump(), tworca_id=current_user.id)
-    if not obj.parafia_id:
-        obj.parafia_id = current_user.parafia_id
+    obj.parafia_id = current_user.parafia_id
     db.add(obj)
     await db.flush()
     await db.refresh(obj)
@@ -251,7 +266,10 @@ async def list_notatki(
     limit: int = Query(50, le=200),
     offset: int = Query(0),
 ):
-    q = select(NotatkaWiedzy).where(NotatkaWiedzy.deleted_at.is_(None))
+    q = select(NotatkaWiedzy).where(
+        NotatkaWiedzy.deleted_at.is_(None),
+        NotatkaWiedzy.parafia_id == current_user.parafia_id,
+    )
 
     if current_user.rola == RolaUzytkownika.PARAFIANIN:
         q = q.where(NotatkaWiedzy.publiczna.is_(True))
@@ -277,6 +295,8 @@ async def get_notatka(notatka_id: uuid.UUID, db: DB, current_user: CurrentUser):
     obj = await db.get(NotatkaWiedzy, notatka_id)
     if not obj or obj.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
+    if obj.parafia_id and current_user.parafia_id and obj.parafia_id != current_user.parafia_id:
+        raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
     if current_user.rola == RolaUzytkownika.PARAFIANIN and not obj.publiczna:
         raise HTTPException(status_code=403, detail="Brak dostępu do tej notatki")
     return obj
@@ -289,6 +309,8 @@ async def update_notatka(
 ):
     obj = await db.get(NotatkaWiedzy, notatka_id)
     if not obj or obj.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
+    if obj.parafia_id and current_user.parafia_id and obj.parafia_id != current_user.parafia_id:
         raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
     stare = audit_svc.snapshot(obj)
     zmiany = payload.model_dump(exclude_unset=True)
@@ -315,6 +337,8 @@ async def soft_delete_notatka(notatka_id: uuid.UUID, db: DB, current_user: Curre
     obj = await db.get(NotatkaWiedzy, notatka_id)
     if not obj or obj.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
+    if obj.parafia_id and current_user.parafia_id and obj.parafia_id != current_user.parafia_id:
+        raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
     stare = audit_svc.snapshot(obj)
     obj.deleted_at = datetime.now(timezone.utc)
     await db.flush()
@@ -333,6 +357,8 @@ async def embed_notatke(notatka_id: uuid.UUID, db: DB, current_user: CurrentUser
     """Ręczne embedowanie pojedynczej notatki (naprawa po błędzie)."""
     obj = await db.get(NotatkaWiedzy, notatka_id)
     if not obj or obj.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
+    if obj.parafia_id and current_user.parafia_id and obj.parafia_id != current_user.parafia_id:
         raise HTTPException(status_code=404, detail="Notatka nie znaleziona")
     qdrant_id = await _embed_i_zapisz(obj, ai)
     if not qdrant_id:

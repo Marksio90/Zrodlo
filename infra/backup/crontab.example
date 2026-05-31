@@ -1,0 +1,14 @@
+# Crontab dla backupów Źródło
+# Instalacja: crontab -e  lub  crontab /opt/zrodlo/infra/backup/crontab.example
+#
+# Zmienne środowiskowe muszą być załadowane przez skrypt lub ustawione tutaj.
+
+BACKUP_ROOT=/backup/zrodlo
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# Codzienny backup o 03:00
+0 3 * * * /opt/zrodlo/infra/backup/backup.sh >> /var/log/zrodlo-backup.log 2>&1
+
+# Sprawdzenie czy backup z dzisiaj istnieje (alert o 09:00 jeśli nie)
+0 9 * * * /opt/zrodlo/infra/backup/check_backup.sh >> /var/log/zrodlo-backup.log 2>&1

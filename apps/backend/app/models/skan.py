@@ -13,6 +13,9 @@ class SkanDokumentu(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "skany_dokumentow"
 
+    parafia_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parafie.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     uzytkownik_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("uzytkownicy.id", ondelete="SET NULL"), nullable=True, index=True
     )

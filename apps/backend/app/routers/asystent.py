@@ -14,6 +14,8 @@ from app.models.rozmowa import Rozmowa, WiadomoscRozmowy
 from app.models.wiedza import NotatkaWiedzy
 from app.schemas.asystent import RozmowaCreate, RozmowaRead, WiadomoscRead, WyslijWiadomoscRequest
 from app.services.ai import SYSTEM_PROMPT_DUSZPASTERSKI, _czy_trudne
+from app.services.ai_koszt import zapisz_uzycie
+from app.models.ai_uzycie import TypAiUzycia
 
 log = structlog.get_logger()
 
@@ -104,7 +106,16 @@ async def wyslij_wiadomosc(
     # Wywołaj AI
     try:
         jest_trudne = _czy_trudne(body.tresc)
-        odpowiedz, model_uzyty = await ai.chat(messages, complex=jest_trudne)
+        odpowiedz, model_uzyty, usage = await ai.chat_tracked(messages, complex=jest_trudne)
+        await zapisz_uzycie(
+            db,
+            model=model_uzyty,
+            typ=TypAiUzycia.CHAT,
+            tokeny_wejscie=usage["prompt_tokens"],
+            tokeny_wyjscie=usage["completion_tokens"],
+            parafia_id=current_user.parafia_id,
+            uzytkownik_id=current_user.id,
+        )
     except Exception as e:
         log.error("asystent_error", error=str(e))
         odpowiedz = "Niestety nie mam tej informacji."
