@@ -46,6 +46,10 @@ class Settings(BaseSettings):
         return v
 
     @property
+    def refresh_secret(self) -> str:
+        return self.secret_key + "_refresh_v1"
+
+    @property
     def is_development(self) -> bool:
         return self.environment == "development"
 

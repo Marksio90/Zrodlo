@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getToken, clearToken } from "@/lib/auth";
+import { getToken, setToken, clearToken } from "@/lib/auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
@@ -7,6 +7,7 @@ export const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 30_000,
+  withCredentials: true, // send httpOnly refresh_token cookie
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -17,15 +18,60 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Silent token refresh on 401
+let isRefreshing = false;
+let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+
+function drainQueue(token: string | null, error: unknown) {
+  pendingQueue.forEach((p) => (token ? p.resolve(token) : p.reject(error)));
+  pendingQueue = [];
+}
+
 apiClient.interceptors.response.use(
   (r) => r,
-  (error) => {
-    if (error.response?.status === 401) {
-      clearToken();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Only attempt refresh once per request; skip refresh endpoint itself
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retried &&
+      !originalRequest.url?.includes("/auth/refresh") &&
+      !originalRequest.url?.includes("/auth/token")
+    ) {
+      originalRequest._retried = true;
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          pendingQueue.push({
+            resolve: (token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(apiClient(originalRequest));
+            },
+            reject,
+          });
+        });
+      }
+
+      isRefreshing = true;
+      try {
+        const { data } = await apiClient.post<{ access_token: string }>("/auth/refresh");
+        setToken(data.access_token);
+        drainQueue(data.access_token, null);
+        originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        drainQueue(null, refreshError);
+        clearToken();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
+
     const message =
       error.response?.data?.detail ?? error.message ?? "Nieznany błąd";
     return Promise.reject(new Error(String(message)));
@@ -37,6 +83,8 @@ export const authApi = {
   login: (email: string, haslo: string) =>
     apiClient.post("/auth/token", { email, haslo }).then((r) => r.data),
   mnie: () => apiClient.get("/auth/mnie").then((r) => r.data),
+  refresh: () => apiClient.post("/auth/refresh").then((r) => r.data),
+  logout: () => apiClient.post("/auth/logout"),
 };
 
 // --- Intencje ---
