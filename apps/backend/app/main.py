@@ -20,6 +20,7 @@ from app.routers import (
     homilia as homilia_router, komunikacja as komunikacja_router,
     archiwum as archiwum_router,
     demo as demo_router,
+    rodo as rodo_router,
 )
 
 log = structlog.get_logger()
@@ -110,3 +111,4 @@ app.include_router(homilia_router.router)
 app.include_router(komunikacja_router.router)
 app.include_router(archiwum_router.router)
 app.include_router(demo_router.router)
+app.include_router(rodo_router.router)
