@@ -269,6 +269,16 @@ export const onboardingApi = {
   status: () => apiClient.get("/onboarding/status").then((r) => r.data),
 };
 
+// --- Zaproszenia ---
+export const zaproszeniaApi = {
+  wyslij: (email: string, rola: string) =>
+    apiClient.post("/zaproszenia/wyslij", { email, rola }),
+  info: (token: string) =>
+    apiClient.get(`/zaproszenia/info?token=${encodeURIComponent(token)}`).then((r) => r.data),
+  aktywuj: (token: string, imie: string, nazwisko: string, haslo: string) =>
+    apiClient.post("/zaproszenia/aktywuj", { token, imie, nazwisko, haslo }).then((r) => r.data),
+};
+
 // --- Dziennik kancleryjny ---
 export const dziennikApi = {
   list: (params?: Record<string, unknown>) =>

@@ -81,3 +81,39 @@ async def send_reset_email(to: str, token: str) -> None:
         html=_reset_html(link),
         text=f"Zresetuj hasło: {link}\n\nLink ważny 1 godzinę.",
     )
+
+
+def _invite_html(link: str, parafia_nazwa: str | None) -> str:
+    parafia_info = f"do parafii <strong>{parafia_nazwa}</strong>" if parafia_nazwa else "do systemu"
+    return f"""
+<html><body style="font-family:Arial,sans-serif;color:#1e293b;max-width:480px;margin:auto">
+  <div style="background:#2563eb;padding:20px 24px;border-radius:8px 8px 0 0">
+    <h2 style="color:#fff;margin:0">Źródło – System Parafialny</h2>
+  </div>
+  <div style="background:#fff;padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+    <h3>Zaproszenie {parafia_info}</h3>
+    <p>Zostałeś(aś) zaproszony(a) do korzystania z systemu Źródło.
+       Kliknij poniższy przycisk, aby aktywować konto i ustawić hasło.
+       Link jest ważny przez <strong>7 dni</strong>.</p>
+    <p style="text-align:center;margin:28px 0">
+      <a href="{link}"
+         style="background:#2563eb;color:#fff;padding:12px 28px;border-radius:6px;
+                text-decoration:none;font-weight:bold;display:inline-block">
+        Aktywuj konto
+      </a>
+    </p>
+    <p style="color:#64748b;font-size:12px">Link: <a href="{link}">{link}</a></p>
+  </div>
+</body></html>
+"""
+
+
+async def send_invite_email(to: str, token: str, parafia_nazwa: str | None = None) -> None:
+    base = settings.app_url.rstrip("/")
+    link = f"{base}/aktywuj-konto?token={token}"
+    await send_email(
+        to=to,
+        subject="Źródło – zaproszenie do systemu parafialnego",
+        html=_invite_html(link, parafia_nazwa),
+        text=f"Aktywuj konto: {link}\n\nLink ważny 7 dni.",
+    )
