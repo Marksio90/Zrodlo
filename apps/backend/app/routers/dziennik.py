@@ -18,6 +18,7 @@ from app.schemas.dziennik import (
     WpisDziennikRead,
     WpisDziennikUpdate,
 )
+from app.schemas.pagination import Strona
 from app.services import audit as audit_svc
 
 router = APIRouter(prefix="/dziennik", tags=["Dziennik kancleryjny"])
@@ -128,7 +129,7 @@ async def eksport_csv(
 
 # ── CRUD ────────────────────────────────────────────────────────────────────
 
-@router.get("", response_model=list[WpisDziennikRead], summary="Lista wpisów dziennika")
+@router.get("", response_model=Strona[WpisDziennikRead], summary="Lista wpisów dziennika")
 async def lista_wpisow(
     current_user: CurrentUser,
     db: DB,
@@ -142,26 +143,41 @@ async def lista_wpisow(
     parafia_id = _wymagaj_parafie(current_user)
     rok = rok or datetime.now(timezone.utc).year
 
-    q = select(WpisDziennika).where(
+    base_where = [
         WpisDziennika.parafia_id == parafia_id,
         WpisDziennika.rok == rok,
         WpisDziennika.deleted_at.is_(None),
-    )
+    ]
     if typ:
-        q = q.where(WpisDziennika.typ == typ)
+        base_where.append(WpisDziennika.typ == typ)
     if status:
-        q = q.where(WpisDziennika.status == status)
+        base_where.append(WpisDziennika.status == status)
     if szukaj:
         pattern = f"%{szukaj}%"
-        q = q.where(
+        base_where.append(
             WpisDziennika.przedmiot.ilike(pattern)
             | WpisDziennika.nadawca.ilike(pattern)
             | WpisDziennika.odbiorca.ilike(pattern)
             | WpisDziennika.numer_pelny.ilike(pattern)
         )
-    q = q.order_by(WpisDziennika.kolejny_numer.desc()).limit(limit).offset(offset)
-    result = await db.execute(q)
-    return result.scalars().all()
+
+    total_result = await db.execute(
+        select(func.count()).select_from(WpisDziennika).where(*base_where)
+    )
+    total = total_result.scalar_one_or_none() or 0
+
+    items_result = await db.execute(
+        select(WpisDziennika).where(*base_where)
+        .order_by(WpisDziennika.kolejny_numer.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return Strona(
+        items=items_result.scalars().all(),
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post("", response_model=WpisDziennikRead, status_code=201, summary="Nowy wpis w dzienniku")
