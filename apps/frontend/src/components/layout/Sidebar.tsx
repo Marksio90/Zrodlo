@@ -15,8 +15,10 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Moon,
   Newspaper,
   Sparkles,
+  Sun,
   Users,
   X,
   Zap,
@@ -24,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { clearToken, getUser } from "@/lib/auth";
 import { authApi } from "@/lib/api";
+import { useTheme } from "@/hooks/useTheme";
 
 const nav = [
   { href: "/dashboard", label: "Pulpit", icon: LayoutDashboard },
@@ -85,6 +88,8 @@ function SidebarLogo() {
 
 function SidebarFooter({ onLogout }: { onLogout: () => void }) {
   const user = getUser();
+  const { isDark, toggleTheme } = useTheme();
+
   return (
     <div className="border-t p-4 space-y-3 shrink-0">
       {user && (
@@ -95,13 +100,23 @@ function SidebarFooter({ onLogout }: { onLogout: () => void }) {
           <p className="text-xs text-muted-foreground truncate">{user.email}</p>
         </div>
       )}
-      <button
-        onClick={onLogout}
-        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-      >
-        <LogOut className="h-4 w-4" />
-        Wyloguj się
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={onLogout}
+          className="flex flex-1 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Wyloguj się
+        </button>
+        <button
+          onClick={toggleTheme}
+          aria-label={isDark ? "Włącz tryb jasny" : "Włącz tryb ciemny"}
+          title={isDark ? "Tryb jasny" : "Tryb ciemny"}
+          className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+      </div>
       <p className="text-xs text-muted-foreground text-center pt-1">
         Źródło · System parafialny
       </p>
