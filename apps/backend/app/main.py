@@ -44,6 +44,7 @@ from app.routers import (
     ai_koszty as ai_koszty_router,
     dziennik as dziennik_router,
     zaproszenia as zaproszenia_router,
+    ws as ws_router,
 )
 
 log = structlog.get_logger()
@@ -143,3 +144,4 @@ app.include_router(onboarding_router.router)
 app.include_router(ai_koszty_router.router)
 app.include_router(dziennik_router.router)
 app.include_router(zaproszenia_router.router)
+app.include_router(ws_router.router)
