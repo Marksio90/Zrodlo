@@ -216,3 +216,11 @@ export const subskrypcjaApi = {
 export const onboardingApi = {
   status: () => apiClient.get("/onboarding/status").then((r) => r.data),
 };
+
+// --- AI Koszty ---
+export const aiKosztyApi = {
+  podsumowanie: () => apiClient.get("/ai/koszty/podsumowanie").then((r) => r.data),
+  alerty: () => apiClient.get("/ai/koszty/alerty").then((r) => r.data),
+  szczegoly: (params?: Record<string, unknown>) =>
+    apiClient.get("/ai/koszty/szczegoly", { params }).then((r) => r.data),
+};

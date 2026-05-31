@@ -45,6 +45,9 @@ class MockResult:
     def scalar_one_or_none(self):
         return self._data[0] if self._data else None
 
+    def __iter__(self):
+        return iter(self._data)
+
 
 class MockDB:
     """Minimalna imitacja AsyncSession SQLAlchemy."""

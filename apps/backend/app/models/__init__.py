@@ -14,6 +14,7 @@ from app.models.rozmowa import Rozmowa, WiadomoscRozmowy
 from app.models.skan import SkanDokumentu
 from app.models.rodo import AkceptacjaUmowy
 from app.models.subskrypcja import Subskrypcja
+from app.models.ai_uzycie import AiUzycie
 
 __all__ = [
     "Base",
@@ -32,4 +33,5 @@ __all__ = [
     "SkanDokumentu",
     "AkceptacjaUmowy",
     "Subskrypcja",
+    "AiUzycie",
 ]

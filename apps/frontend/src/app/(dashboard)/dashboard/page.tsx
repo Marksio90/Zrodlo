@@ -27,6 +27,7 @@ import {
   powiadomieniaApi,
   wspolnotyApi,
 } from "@/lib/api";
+import { AiKosztWidget } from "@/components/AiKosztWidget";
 import { getUser } from "@/lib/auth";
 import { formatTime, formatDateTime } from "@/lib/utils";
 import type { Wspolnota } from "@/types";
@@ -417,6 +418,18 @@ export default function CentrumZrodlaPage() {
             </div>
           </div>
         </section>
+
+        {/* ── AI LIMIT (proboszcz/admin) ── */}
+        {user?.rola && ["proboszcz", "admin"].includes(user.rola) && (
+          <section>
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-4">
+              Asystent AI
+            </h2>
+            <div className="max-w-md">
+              <AiKosztWidget />
+            </div>
+          </section>
+        )}
 
         {/* ── STATYSTYKI ── */}
         <section>

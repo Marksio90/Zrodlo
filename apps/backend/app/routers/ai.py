@@ -2,7 +2,9 @@ from pydantic import BaseModel, Field
 
 from fastapi import APIRouter, HTTPException
 
-from app.dependencies import AI
+from app.dependencies import AI, CurrentUser, DB
+from app.models.ai_uzycie import TypAiUzycia
+from app.services.ai_koszt import zapisz_uzycie
 
 router = APIRouter(prefix="/ai", tags=["AI – Wsparcie duszpasterskie"])
 
@@ -38,7 +40,7 @@ ZASTRZEZENIE = (
 
 
 @router.post("/homilia", response_model=HomiliaResponse)
-async def wsparcie_homilii(req: HomiliaRequest, ai: AI):
+async def wsparcie_homilii(req: HomiliaRequest, ai: AI, db: DB, current_user: CurrentUser):
     czytania_tekst = "\n\n".join(
         f"Czytanie {i + 1}:\n{c}" for i, c in enumerate(req.czytania)
     )
@@ -58,15 +60,24 @@ Zaproponuj:
 Pamiętaj: to są propozycje do przemyślenia przez kapłana, nie gotowy tekst do odczytania."""
 
     try:
-        sugestia = await ai.generate(prompt)
+        sugestia, model_uzyty, usage = await ai.generate_tracked(prompt)
+        await zapisz_uzycie(
+            db,
+            model=model_uzyty,
+            typ=TypAiUzycia.HOMILIA,
+            tokeny_wejscie=usage["prompt_tokens"],
+            tokeny_wyjscie=usage["completion_tokens"],
+            parafia_id=current_user.parafia_id,
+            uzytkownik_id=current_user.id,
+        )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Serwis AI niedostępny: {e}")
 
-    return HomiliaResponse(sugestia=sugestia, model=ai._model, zastrzezenie=ZASTRZEZENIE)
+    return HomiliaResponse(sugestia=sugestia, model=model_uzyty, zastrzezenie=ZASTRZEZENIE)
 
 
 @router.post("/dokument", response_model=DokumentResponse)
-async def generuj_dokument(req: DokumentRequest, ai: AI):
+async def generuj_dokument(req: DokumentRequest, ai: AI, db: DB, current_user: CurrentUser):
     dane_str = "\n".join(f"- {k}: {v}" for k, v in req.dane.items())
     prompt = f"""Zredaguj treść dokumentu typu: {req.typ}
 
@@ -79,11 +90,20 @@ Użyj wyłącznie podanych danych. Nie uzupełniaj brakujących informacji domys
 Jeśli brakuje kluczowych danych, wskaż to wyraźnie w tekście."""
 
     try:
-        tresc = await ai.generate(prompt)
+        tresc, model_uzyty, usage = await ai.generate_tracked(prompt)
+        await zapisz_uzycie(
+            db,
+            model=model_uzyty,
+            typ=TypAiUzycia.DOKUMENT,
+            tokeny_wejscie=usage["prompt_tokens"],
+            tokeny_wyjscie=usage["completion_tokens"],
+            parafia_id=current_user.parafia_id,
+            uzytkownik_id=current_user.id,
+        )
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Serwis AI niedostępny: {e}")
 
-    return DokumentResponse(tresc=tresc, model=ai._model, zastrzezenie=ZASTRZEZENIE)
+    return DokumentResponse(tresc=tresc, model=model_uzyty, zastrzezenie=ZASTRZEZENIE)
 
 
 @router.get("/modele")
