@@ -22,6 +22,7 @@ from app.services.auth import (
     verify_password,
 )
 from app.services.email import send_reset_email
+from app.services.rate_limit import limiter
 
 _RESET_TTL = 3600  # 1 hour
 
@@ -41,6 +42,7 @@ _REFRESH_PATH = "/api/auth"
 
 
 @router.post("/token", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def login(payload: LoginRequest, request: Request, response: Response, db: DB, cache: Cache):
     result = await db.execute(
         select(Uzytkownik).where(
@@ -100,6 +102,7 @@ async def login(payload: LoginRequest, request: Request, response: Response, db:
 
 
 @router.post("/refresh")
+@limiter.limit("30/minute")
 async def refresh_token(request: Request, response: Response, db: DB, cache: Cache):
     token = request.cookies.get("refresh_token")
     if not token:
@@ -177,7 +180,8 @@ async def logout(request: Request, response: Response, cache: Cache):
 
 
 @router.post("/reset-hasla/wyslij", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_hasla_wyslij(payload: _ResetWyslij, db: DB, cache: Cache):
+@limiter.limit("5/minute")
+async def reset_hasla_wyslij(payload: _ResetWyslij, request: Request, db: DB, cache: Cache):
     """Wyślij e-mail z linkiem do resetu hasła (zawsze 204 – nie ujawnia czy email istnieje)."""
     result = await db.execute(
         select(Uzytkownik).where(
@@ -194,7 +198,8 @@ async def reset_hasla_wyslij(payload: _ResetWyslij, db: DB, cache: Cache):
 
 
 @router.post("/reset-hasla/zmien", status_code=status.HTTP_204_NO_CONTENT)
-async def reset_hasla_zmien(payload: _ResetZmien, db: DB, cache: Cache):
+@limiter.limit("5/minute")
+async def reset_hasla_zmien(payload: _ResetZmien, request: Request, db: DB, cache: Cache):
     """Ustaw nowe hasło na podstawie jednorazowego tokenu z e-maila."""
     user_id_str = await cache.get(f"pwreset:{payload.token}")
     if not user_id_str:
@@ -214,6 +219,7 @@ async def reset_hasla_zmien(payload: _ResetZmien, db: DB, cache: Cache):
 
 
 @router.post("/rejestracja", response_model=UzytkownikRead, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def rejestracja(payload: UzytkownikCreate, request: Request, db: DB):
     """
     Rejestracja nowego konta.
