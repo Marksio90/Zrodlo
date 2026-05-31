@@ -1,6 +1,7 @@
 """Archiwum Dokumentów – upload, OCR, tagowanie, wyszukiwanie, archiwizacja."""
 import json
 import mimetypes
+import re
 import uuid
 from datetime import date, datetime, timezone
 
@@ -8,6 +9,7 @@ import structlog
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import or_, select
 
+from app.config import settings
 from app.dependencies import AI, DB, CurrentUser, Storage
 from app.models.skan import SkanDokumentu
 from app.models.uzytkownicy import RolaUzytkownika
@@ -18,13 +20,35 @@ log = structlog.get_logger()
 
 router = APIRouter(prefix="/archiwum", tags=["Archiwum – Dokumenty OCR"])
 
-_MAKS_ROZMIAR = 10 * 1024 * 1024  # 10 MB
 _MIME_DO_TYP = {
     "application/pdf": "pdf",
     "image/jpeg": "jpg",
     "image/jpg": "jpg",
     "image/png": "png",
 }
+
+# Magic bytes for supported file types (defense against MIME spoofing)
+_MAGIC_BYTES: dict[str, bytes] = {
+    "pdf": b"%PDF",
+    "jpg": b"\xff\xd8\xff",
+    "png": b"\x89PNG\r\n\x1a\n",
+}
+
+_SAFE_FILENAME = re.compile(r"[^\w\.\-]")
+
+
+def _sanitize_filename(name: str) -> str:
+    """Remove path separators and non-safe chars from filename."""
+    base = name.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]  # strip path traversal
+    safe = _SAFE_FILENAME.sub("_", base)
+    return safe[:200] or "dokument"
+
+
+def _validate_magic(content: bytes, typ: str) -> bool:
+    magic = _MAGIC_BYTES.get(typ)
+    if not magic:
+        return True
+    return content[: len(magic)] == magic
 
 # ---------------------------------------------------------------------------
 # Upload + OCR
@@ -52,16 +76,24 @@ async def upload_dokument(
     typ_pliku = _MIME_DO_TYP[mime_type]
 
     # Czytanie pliku
+    maks_rozmiar = settings.max_upload_mb * 1024 * 1024
     content = await plik.read()
-    if len(content) > _MAKS_ROZMIAR:
+    if len(content) > maks_rozmiar:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Plik zbyt duży – maksymalnie 10 MB",
+            detail=f"Plik zbyt duży – maksymalnie {settings.max_upload_mb} MB",
+        )
+
+    # Walidacja magic bytes (ochrona przed podmienionym MIME)
+    if not _validate_magic(content, typ_pliku):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Plik nie odpowiada deklarowanemu typowi",
         )
 
     # Zapis w MinIO
     skan_id = uuid.uuid4()
-    bezpieczna_nazwa = (plik.filename or "dokument").replace(" ", "_")
+    bezpieczna_nazwa = _sanitize_filename(plik.filename or "dokument")
     klucz = f"skany/{current_user.id}/{skan_id}/{bezpieczna_nazwa}"
     try:
         storage.upload(klucz, content, mime_type)

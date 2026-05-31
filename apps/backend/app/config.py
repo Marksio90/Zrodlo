@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # URL frontendu (do linków w mailach)
     app_url: str = "http://localhost:3000"
 
+    # Limity uploadu
+    max_upload_mb: int = 10
+
     # Sentry (opcjonalnie – brak DSN = wyłączone)
     sentry_dsn: str = ""
     sentry_traces_sample_rate: float = 0.1
